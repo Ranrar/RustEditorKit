@@ -1,3 +1,4 @@
+
 # RustEditorKit ia a modern `Rust editor toolkit` built for GTK-RS
 
 ## Motivation
@@ -16,6 +17,42 @@ I am developing this project because I am writing a Markdown editor (Marco) and 
 - Line numbers, gutter, and highlight support
 - Extensible modules for new features
 - Plugin functionality is planned for future extensibility
+
+## EditorWidget
+
+`EditorWidget` is the main GTK4 widget for RustEditorKit. It encapsulates all editor logic, rendering, and input handling, making it easy to embed a fully-featured code editor in your GTK4 application.
+
+**Usage Example:**
+
+```rust
+use gtk4::prelude::*;
+use gtk4::{Application, ApplicationWindow};
+use rusteditorkit::editorwidget::editor::EditorWidget;
+
+fn main() {
+    let app = Application::builder()
+        .application_id("com.example.rusteditorkit.demo")
+        .build();
+
+    app.connect_activate(|app| {
+        let editor = EditorWidget::new();
+        editor.connect_signals();
+
+        let window = ApplicationWindow::builder()
+            .application(app)
+            .title("RustEditorKit Demo")
+            .default_width(800)
+            .default_height(600)
+            .child(editor.widget())
+            .build();
+
+        window.show();
+        editor.widget().grab_focus();
+    });
+
+    app.run();
+}
+```
 
 ## Why Rust?
 
@@ -86,19 +123,15 @@ GTK4 provides:
 - RustEditorKit: MIT License
 - GtkSourceView: LGPL License
 
-This workspace contains:
-- `rust_editor_kit`: A Rust library crate for all editor logic (multi-cursor, selection, undo, etc.)
+## Quick Start
 
-## Usage
-- Add your editor logic modules to `rust_editor_kit/src/` and expose them in `rust_editor_kit/src/lib.rs`.
-- Add more crates to the workspace as needed (e.g., main app, UI integration).
+Clone the repository and run the demo:
 
-## Getting Started
-1. Build the workspace:
-   ```bash
-   cargo build --workspace
-   ```
-2. Add your main application crate to the workspace and depend on `rust_editor_kit`.
+```bash
+git clone https://github.com/Ranrar/RustEditorKit.git
+cd RustEditorKit
+cargo run --bin demo
+```
 
 ## Functions List (Detailed Status)
 
