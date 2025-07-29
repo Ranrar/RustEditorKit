@@ -15,6 +15,10 @@ pub mod bracket;
 pub mod indent;
 pub mod a4;
 pub mod render;
+pub mod editorwidget;
+pub mod imcontext;
+
+pub mod cursor;
 
 // Example: re-export EditorBuffer for external use
 pub use core::EditorBuffer;

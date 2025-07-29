@@ -35,18 +35,14 @@
 pub struct EditorBuffer {
     /// Lines of text in the buffer
     pub lines: Vec<String>,
-    /// Cursor row position
-    pub cursor_row: usize,
-    /// Cursor column position
-    pub cursor_col: usize,
+    /// Cursor position
+    pub cursor: crate::cursor::EditorCursor,
     /// Scroll offset for vertical scrolling
     pub scroll_offset: usize,
     /// Whether to highlight the current line
     pub highlight_line: bool,
-    /// Selection start (row, col)
-    pub selection_start: Option<(usize, usize)>,
-    /// Selection end (row, col)
-    pub selection_end: Option<(usize, usize)>,
+    /// Selection (start/end)
+    pub selection: Option<crate::selection::Selection>,
     /// List of additional cursors (row, col)
     pub multi_cursors: Vec<(usize, usize)>,
     /// List of additional selections (start, end)
@@ -63,9 +59,6 @@ pub struct EditorBuffer {
     pub word_wrap: bool,
     /// Font name
     pub font: String,
-    /// Font size
-    pub font_size: f64,
-    /// Line height
     pub line_height: f64,
     /// Character spacing
     pub character_spacing: f64,
@@ -168,28 +161,30 @@ impl EditorBuffer {
     }
     /// Move cursor up by one visible page (PgUp)
     pub fn move_page_up(&mut self, lines_per_page: usize) {
-        if self.cursor_row > lines_per_page {
-            self.cursor_row -= lines_per_page;
+        if self.cursor.row > lines_per_page {
+            self.cursor.row -= lines_per_page;
         } else {
-            self.cursor_row = 0;
+            self.cursor.row = 0;
         }
-        self.cursor_col = self.cursor_col.min(self.lines[self.cursor_row].len());
+        self.cursor.col = self.cursor.col.min(self.lines[self.cursor.row].len());
     }
 
     /// Move cursor down by one visible page (PgDn)
     pub fn move_page_down(&mut self, lines_per_page: usize) {
         let max_row = self.lines.len().saturating_sub(1);
-        self.cursor_row = (self.cursor_row + lines_per_page).min(max_row);
-        self.cursor_col = self.cursor_col.min(self.lines[self.cursor_row].len());
+        self.cursor.row = (self.cursor.row + lines_per_page).min(max_row);
+        self.cursor.col = self.cursor.col.min(self.lines[self.cursor.row].len());
     }
     /// Cut selected text (removes and returns it)
     pub fn cut(&mut self) -> String {
-        if let (Some((row, col_start)), Some((_, col_end))) = (self.selection_start, self.selection_end) {
-            if row < self.lines.len() && col_end > col_start {
-                let cut = self.lines[row][col_start..col_end].to_string();
-                self.lines[row].replace_range(col_start..col_end, "");
+        if let Some(sel) = &self.selection {
+            let ((row_start, col_start), (row_end, col_end)) = sel.normalized();
+            if row_start == row_end && row_start < self.lines.len() && col_end > col_start {
+                let cut = self.lines[row_start][col_start..col_end].to_string();
+                self.lines[row_start].replace_range(col_start..col_end, "");
                 return cut;
             }
+            // TODO: multi-line cut support
         }
         String::new()
     }
@@ -378,12 +373,10 @@ impl EditorBuffer {
         let theme = ThemeSet::load_defaults().themes["InspiredGitHub"].clone();
         EditorBuffer {
             lines: vec!["fn main() {".to_string(), "    ".to_string(), "}".to_string()],
-            cursor_row: 0,
-            cursor_col: 0,
+            cursor: crate::cursor::EditorCursor::new(0, 0),
             scroll_offset: 0,
             highlight_line: true,
-            selection_start: None,
-            selection_end: None,
+            selection: None,
             multi_cursors: Vec::new(),
             multi_selections: Vec::new(),
             theme,
@@ -392,7 +385,6 @@ impl EditorBuffer {
             redo_stack: Vec::new(),
             word_wrap: true,
             font: "monospace".to_string(),
-            font_size: 16.0,
             line_height: 20.0,
             character_spacing: 0.0,
             fg_color: "#222222".to_string(),

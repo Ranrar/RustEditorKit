@@ -5,8 +5,8 @@ impl EditorBuffer {
     /// Find matching bracket/parenthesis for cursor position
     pub fn find_matching_bracket(&self) -> Option<(usize, usize)> {
         let pairs = [('(', ')'), ('[', ']'), ('{', '}')];
-        let row = self.cursor_row;
-        let col = self.cursor_col;
+        let row = self.cursor.row;
+        let col = self.cursor.col;
         if row >= self.lines.len() || col == 0 || col > self.lines[row].len() {
             return None;
         }

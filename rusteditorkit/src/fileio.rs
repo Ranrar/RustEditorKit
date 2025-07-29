@@ -12,11 +12,10 @@ impl EditorBuffer {
                 match reader.lines().collect::<Result<_, _>>() {
                     Ok(lines) => {
                         self.lines = lines;
-                        self.cursor_row = 0;
-                        self.cursor_col = 0;
+                        self.cursor.row = 0;
+                        self.cursor.col = 0;
                         self.scroll_offset = 0;
-                        self.selection_start = None;
-                        self.selection_end = None;
+                        self.selection = None;
                         self.undo_stack.clear();
                         self.redo_stack.clear();
                         Ok(())

@@ -1,5 +1,5 @@
 [package]
-name = "RustEditorKit"
+name = "rusteditorkit"
 version = "0.0.1"
 edition = "2021"
 description = "A Rust editor toolkit for GTK4."

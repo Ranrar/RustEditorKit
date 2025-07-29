@@ -4,7 +4,7 @@ use crate::core::EditorBuffer;
 impl EditorBuffer {
     /// Find the next occurrence of a string, returns (row, col) or None
     pub fn find_next(&self, query: &str, from: Option<(usize, usize)>) -> Option<(usize, usize)> {
-        let (mut row, mut col) = from.unwrap_or((self.cursor_row, self.cursor_col));
+        let (mut row, mut col) = from.unwrap_or((self.cursor.row, self.cursor.col));
         for r in row..self.lines.len() {
             let start = if r == row { col } else { 0 };
             if let Some(idx) = self.lines[r][start..].find(query) {
@@ -20,8 +20,8 @@ impl EditorBuffer {
             self.push_undo();
             let line = &mut self.lines[row];
             line.replace_range(col..col + query.len(), replacement);
-            self.cursor_row = row;
-            self.cursor_col = col + replacement.len();
+            self.cursor.row = row;
+            self.cursor.col = col + replacement.len();
             return true;
         }
         false

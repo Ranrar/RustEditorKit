@@ -85,6 +85,12 @@ pub fn parse_color(color: &str) -> (f64, f64, f64, f64) {
 
 /// Render the editor buffer to the given Cairo context
 pub fn render_editor(rkit: &EditorBuffer, ctx: &Context, width: i32, height: i32) {
+    // Debug: profile redraw start
+    use std::time::Instant;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    static FRAME_COUNT: AtomicUsize = AtomicUsize::new(0);
+    let start_time = Instant::now();
+
     // Background
     let (r, g, b, a) = parse_color(&rkit.bg_color);
     ctx.set_source_rgba(r, g, b, a);
@@ -104,12 +110,12 @@ pub fn render_editor(rkit: &EditorBuffer, ctx: &Context, width: i32, height: i32
     let line_height = rkit.line_height;
     let char_spacing = rkit.character_spacing;
     let font = &rkit.font;
-    let font_size = rkit.font_size;
+    let font_size = 16.0;
     let pango_ctx = pango::Context::new();
     for (i, line) in rkit.lines.iter().enumerate() {
         let y = i as f64 * line_height;
         // Line number
-        let line_num_color = if rkit.highlight_line && i == rkit.cursor_row {
+        let line_num_color = if rkit.highlight_line && i == rkit.cursor.row {
             &rkit.selected_line_number_color
         } else {
             &rkit.line_number_color
@@ -122,10 +128,25 @@ pub fn render_editor(rkit: &EditorBuffer, ctx: &Context, width: i32, height: i32
         layout.set_font_description(Some(&font_desc));
         layout.set_spacing(char_spacing as i32);
         ctx.move_to(GUTTER_WIDTH as f64, y);
-        // No direct show_layout; fallback to layout drawing if available
+        pangocairo::functions::show_layout(ctx, &layout);
+
+        // Selection highlight
+        if let Some(sel) = &rkit.selection {
+            let ((row_start, col_start), (row_end, col_end)) = sel.normalized();
+            if row_start <= i && i <= row_end {
+                let sel_color = parse_color(&rkit.highlight_color);
+                ctx.set_source_rgba(sel_color.0, sel_color.1, sel_color.2, 0.5); // semi-transparent
+                let start = if i == row_start { col_start } else { 0 };
+                let end = if i == row_end { col_end } else { line.len() };
+                let x0 = GUTTER_WIDTH as f64 + start as f64 * font_size;
+                let x1 = GUTTER_WIDTH as f64 + end as f64 * font_size;
+                ctx.rectangle(x0, y, x1 - x0, line_height);
+                ctx.fill().unwrap_or(());
+            }
+        }
 
         // Active/inactive line background
-        if rkit.show_active_line_bg && i == rkit.cursor_row {
+        if rkit.show_active_line_bg && i == rkit.cursor.row {
             let (r, g, b, a) = parse_color(&rkit.active_line_bg_color);
             ctx.set_source_rgba(r, g, b, a);
             ctx.rectangle(GUTTER_WIDTH as f64, y, width as f64 - GUTTER_WIDTH as f64, line_height);
@@ -145,7 +166,8 @@ pub fn render_editor(rkit: &EditorBuffer, ctx: &Context, width: i32, height: i32
         let font_desc = pango::FontDescription::from_string(&format!("{} {}", font, font_size));
         layout.set_font_description(Some(&font_desc));
         layout.set_spacing(char_spacing as i32);
-        // No direct show_layout; fallback to layout drawing if available
+        ctx.move_to(GUTTER_WIDTH as f64 + 32.0, y); // Indent text after line number
+        pangocairo::functions::show_layout(ctx, &layout);
 
         // Diagnostics
         for (row, _msg, kind) in &rkit.diagnostics {
@@ -171,8 +193,22 @@ pub fn render_editor(rkit: &EditorBuffer, ctx: &Context, width: i32, height: i32
     // Cursor
     let (r, g, b, a) = parse_color(&rkit.cursor_color);
     ctx.set_source_rgba(r, g, b, a);
-    let cursor_x = GUTTER_WIDTH as f64 + rkit.cursor_col as f64 * font_size;
-    let cursor_y = rkit.cursor_row as f64 * line_height;
+    let cursor_x = GUTTER_WIDTH as f64 + rkit.cursor.col as f64 * font_size;
+    let cursor_y = rkit.cursor.row as f64 * line_height;
     ctx.rectangle(cursor_x, cursor_y, 2.0, line_height);
     ctx.fill().unwrap_or(());
+    // Debug: profile redraw end
+    let elapsed = start_time.elapsed();
+    if rkit.debug_mode {
+        let frame = FRAME_COUNT.fetch_add(1, Ordering::Relaxed);
+        let cursor = &rkit.cursor;
+        let sel = rkit.selection.as_ref().map(|s| {
+            let ((sr, sc), (er, ec)) = s.normalized();
+            format!("[{}:{} -> {}:{}]", sr, sc, er, ec)
+        }).unwrap_or_else(|| "[none]".to_string());
+        println!(
+            "[EDITOR DEBUG] Frame {} | Cursor: row={}, col={} | Selection: {} | Redraw: {:?}",
+            frame, cursor.row, cursor.col, sel, elapsed
+        );
+    }
 }

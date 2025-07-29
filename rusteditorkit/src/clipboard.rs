@@ -26,12 +26,14 @@ impl EditorBuffer {
         });
 // Provide a basic copy() method for EditorBuffer
 impl EditorBuffer {
-    /// Return selected text (stub: returns first line for now)
+    /// Return selected text (single-line selection only)
     pub fn copy(&self) -> String {
-        if let (Some((row, col_start)), Some((_, col_end))) = (self.selection_start, self.selection_end) {
-            if row < self.lines.len() && col_end > col_start {
-                return self.lines[row][col_start..col_end].to_string();
+        if let Some(sel) = &self.selection {
+            let ((row_start, col_start), (row_end, col_end)) = sel.normalized();
+            if row_start == row_end && row_start < self.lines.len() && col_end > col_start {
+                return self.lines[row_start][col_start..col_end].to_string();
             }
+            // TODO: multi-line copy support
         }
         self.lines.get(0).cloned().unwrap_or_default()
     }

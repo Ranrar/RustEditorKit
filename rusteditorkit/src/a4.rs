@@ -43,16 +43,16 @@ impl EditorBuffer {
     pub fn move_a4_page_down(&mut self) {
         if self.a4_mode {
             let lines = self.lines_per_a4_page();
-            self.cursor_row = (self.cursor_row + lines).min(self.lines.len().saturating_sub(1));
-            self.cursor_col = self.cursor_col.min(self.lines[self.cursor_row].len());
+            self.cursor.row = (self.cursor.row + lines).min(self.lines.len().saturating_sub(1));
+            self.cursor.col = self.cursor.col.min(self.lines[self.cursor.row].len());
         }
     }
     /// Move cursor up by one A4 page
     pub fn move_a4_page_up(&mut self) {
         if self.a4_mode {
             let lines = self.lines_per_a4_page();
-            self.cursor_row = self.cursor_row.saturating_sub(lines);
-            self.cursor_col = self.cursor_col.min(self.lines[self.cursor_row].len());
+            self.cursor.row = self.cursor.row.saturating_sub(lines);
+            self.cursor.col = self.cursor.col.min(self.lines[self.cursor.row].len());
         }
     }
 }

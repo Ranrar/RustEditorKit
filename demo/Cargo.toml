@@ -1,0 +1,10 @@
+[package]
+name = "demo"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+gtk4 = "0.10.0"
+rusteditorkit = { path = "../rusteditorkit" }
+pango = "0.21.0"
+pangocairo = "0.21.0"
