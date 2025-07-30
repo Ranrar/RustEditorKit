@@ -1,5 +1,5 @@
 
-# RustEditorKit ia a modern `Rust editor toolkit` built for GTK-RS
+# RustEditorKit is a modern `Rust editor toolkit` built for GTK-RS
 
 ## Motivation
 
