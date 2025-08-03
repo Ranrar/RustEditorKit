@@ -1,3 +1,184 @@
+
+// --- Corelogic main types and functions ---
+pub use crate::corelogic::buffer::*;
+pub use crate::corelogic::font::*;
+pub use crate::corelogic::cursor::*;
+pub use crate::corelogic::gutter::*;
+pub use crate::corelogic::undo::*;
+pub use crate::corelogic::search::*;
+pub use crate::corelogic::fileio::*;
+pub use crate::corelogic::dispatcher::*;
+// Layout is currently disabled in mod.rs, but can be re-exported if needed:
+// pub use crate::corelogic::layout::*;
+
+// --- Keybinds main types and functions ---
+pub use crate::keybinds::editor_action::*;
+#[cfg(target_os = "linux")]
+pub use crate::keybinds::linux::*;
+#[cfg(target_os = "windows")]
+pub use crate::keybinds::win::*;
+#[cfg(target_os = "macos")]
+pub use crate::keybinds::mac::*;
+
+impl LegacyEditorBuffer {
+    pub fn move_to_line_start(&mut self) {
+        println!("[DEBUG] move_to_line_start");
+        self.cursor.col = 0;
+    }
+
+    pub fn move_to_line_end(&mut self) {
+        println!("[DEBUG] move_to_line_end");
+        if self.cursor.row < self.lines.len() {
+            self.cursor.col = self.lines[self.cursor.row].len();
+        }
+    }
+
+
+    pub fn select_left(&mut self) {
+        // Start or extend selection to the left
+        let prev_cursor = self.cursor;
+        self.move_left();
+        let new_cursor = self.cursor;
+        if prev_cursor != new_cursor {
+            match &mut self.selection {
+                Some(sel) => {
+                    sel.end_row = new_cursor.row;
+                    sel.end_col = new_cursor.col;
+                    sel.clamp_to_buffer(&self.lines);
+                    if sel.start_row == sel.end_row && sel.start_col == sel.end_col {
+                        self.selection = None;
+                    }
+                }
+                None => {
+                    let mut sel = crate::corelogic::selection::Selection::new(prev_cursor.row, prev_cursor.col);
+                    sel.set(prev_cursor.row, prev_cursor.col, new_cursor.row, new_cursor.col);
+                    self.selection = Some(sel);
+                }
+            }
+        }
+        println!("[DEBUG] select_left: {:?}", self.selection);
+    }
+
+    pub fn select_right(&mut self) {
+        // Start or extend selection to the right
+        let prev_cursor = self.cursor;
+        self.move_right();
+        let new_cursor = self.cursor;
+        if prev_cursor != new_cursor {
+            match &mut self.selection {
+                Some(sel) => {
+                    sel.end_row = new_cursor.row;
+                    sel.end_col = new_cursor.col;
+                    sel.clamp_to_buffer(&self.lines);
+                    if sel.start_row == sel.end_row && sel.start_col == sel.end_col {
+                        self.selection = None;
+                    }
+                }
+                None => {
+                    let mut sel = crate::corelogic::selection::Selection::new(prev_cursor.row, prev_cursor.col);
+                    sel.set(prev_cursor.row, prev_cursor.col, new_cursor.row, new_cursor.col);
+                    self.selection = Some(sel);
+                }
+            }
+        }
+        println!("[DEBUG] select_right: {:?}", self.selection);
+    }
+
+    pub fn select_up(&mut self) {
+        // Start or extend selection up
+        let prev_cursor = self.cursor;
+        self.move_up();
+        let new_cursor = self.cursor;
+        if prev_cursor != new_cursor {
+            match &mut self.selection {
+                Some(sel) => {
+                    sel.end_row = new_cursor.row;
+                    sel.end_col = new_cursor.col;
+                    sel.clamp_to_buffer(&self.lines);
+                    if sel.start_row == sel.end_row && sel.start_col == sel.end_col {
+                        self.selection = None;
+                    }
+                }
+                None => {
+                    let mut sel = crate::corelogic::selection::Selection::new(prev_cursor.row, prev_cursor.col);
+                    sel.set(prev_cursor.row, prev_cursor.col, new_cursor.row, new_cursor.col);
+                    self.selection = Some(sel);
+                }
+            }
+        }
+        println!("[DEBUG] select_up: {:?}", self.selection);
+    }
+
+    pub fn select_down(&mut self) {
+        // Start or extend selection down
+        let prev_cursor = self.cursor;
+        self.move_down();
+        let new_cursor = self.cursor;
+        if prev_cursor != new_cursor {
+            match &mut self.selection {
+                Some(sel) => {
+                    sel.end_row = new_cursor.row;
+                    sel.end_col = new_cursor.col;
+                    sel.clamp_to_buffer(&self.lines);
+                    if sel.start_row == sel.end_row && sel.start_col == sel.end_col {
+                        self.selection = None;
+                    }
+                }
+                None => {
+                    let mut sel = crate::corelogic::selection::Selection::new(prev_cursor.row, prev_cursor.col);
+                    sel.set(prev_cursor.row, prev_cursor.col, new_cursor.row, new_cursor.col);
+                    self.selection = Some(sel);
+                }
+            }
+        }
+        println!("[DEBUG] select_down: {:?}", self.selection);
+    }
+    /// Move cursor left (with bounds checking)
+    pub fn move_left(&mut self) {
+        if self.cursor.col > 0 {
+            self.cursor.col -= 1;
+        } else if self.cursor.row > 0 {
+            self.cursor.row -= 1;
+            self.cursor.col = self.lines[self.cursor.row].len();
+        }
+    }
+
+    /// Move cursor right (with bounds checking)
+    pub fn move_right(&mut self) {
+        if self.cursor.col < self.lines[self.cursor.row].len() {
+            self.cursor.col += 1;
+        } else if self.cursor.row + 1 < self.lines.len() {
+            self.cursor.row += 1;
+            self.cursor.col = 0;
+        }
+    }
+
+    /// Move cursor up (with bounds checking)
+    pub fn move_up(&mut self) {
+        if self.cursor.row > 0 {
+            self.cursor.row -= 1;
+            self.cursor.col = self.cursor.col.min(self.lines[self.cursor.row].len());
+        }
+    }
+
+    /// Move cursor down (with bounds checking)
+    pub fn move_down(&mut self) {
+        if self.cursor.row + 1 < self.lines.len() {
+            self.cursor.row += 1;
+            self.cursor.col = self.cursor.col.min(self.lines[self.cursor.row].len());
+        }
+    }
+
+    /// Move cursor to start of line
+    pub fn move_home(&mut self) {
+        self.cursor.col = 0;
+    }
+
+    /// Move cursor to end of line
+    pub fn move_end(&mut self) {
+        self.cursor.col = self.lines[self.cursor.row].len();
+    }
+}
 /// Thread safety and async message passing example for GTK4 Rust
 ///
 /// All GTK4 widget creation, updates, and signal handling must occur on the main thread.
@@ -32,17 +213,19 @@
 
 /// The main buffer struct for the custom code editor.
 /// Holds all text, cursor, selection, undo/redo, theme, and rendering state.
-pub struct EditorBuffer {
+pub struct LegacyEditorBuffer {
+    /// Modular config for all editor appearance and behavior
+    pub config: crate::config::configuration::EditorConfig,
     /// Lines of text in the buffer
     pub lines: Vec<String>,
     /// Cursor position
-    pub cursor: crate::cursor::EditorCursor,
+    pub cursor: EditorCursor,
     /// Scroll offset for vertical scrolling
     pub scroll_offset: usize,
     /// Whether to highlight the current line
     pub highlight_line: bool,
     /// Selection (start/end)
-    pub selection: Option<crate::selection::Selection>,
+    pub selection: Option<crate::corelogic::selection::Selection>,
     /// List of additional cursors (row, col)
     pub multi_cursors: Vec<(usize, usize)>,
     /// List of additional selections (start, end)
@@ -51,21 +234,24 @@ pub struct EditorBuffer {
     pub theme: syntect::highlighting::Theme,
     /// Syntax set for highlighting
     pub syntax_set: SyntaxSet,
-    /// Undo stack for buffer edits
-    pub undo_stack: Vec<Vec<String>>,
-    /// Redo stack for buffer edits
-    pub redo_stack: Vec<Vec<String>>,
+    /// Undo stack for buffer edits, selection, and cursor
     /// Word wrap enabled
     pub word_wrap: bool,
-    /// Font name
-    pub font: String,
-    pub line_height: f64,
-    /// Character spacing
-    pub character_spacing: f64,
+    /// Modular font configuration for all font properties
+    pub font: crate::corelogic::font::FontConfig,
+    /// Gutter width in pixels
+    pub gutter_width: i32,
+    /// Left margin in pixels
+    pub margin_left: f64,
+    /// Right margin in pixels
+    pub margin_right: f64,
+    /// Top margin in pixels
+    pub margin_top: f64,
+    /// Bottom margin in pixels
+    pub margin_bottom: f64,
     /// Foreground color
-    pub fg_color: String,
     /// Background color
-    pub bg_color: String,
+    pub editor_bg_color: String,
     /// Gutter color
     pub gutter_color: String,
     /// Line number color
@@ -137,28 +323,50 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use gtk4::prelude::*;
 use gtk4::{Application, ApplicationWindow, DrawingArea};
-use gtk4::gdk;
-use glib::clone;
-use gtk4::pango::{AttrList, Layout};
-use pangocairo::functions as pango_cairo;
-use cairo::{Context, ImageSurface};
 use syntect::parsing::SyntaxSet;
-use syntect::highlighting::{ThemeSet, Style};
-use syntect::easy::HighlightLines;
 
-const FONT: &str = "monospace";
-const FONT_SIZE: f64 = 16.0;
-const LINE_HEIGHT: f64 = 20.0;
-const GUTTER_WIDTH: i32 = 40;
+impl LegacyEditorBuffer {
+    /// Get a reference to the font config
+    pub fn font_config(&self) -> &crate::corelogic::font::FontConfig {
+        &self.font
+    }
 
+    /// Get mutable reference to the font config
+    pub fn font_config_mut(&mut self) -> &mut crate::corelogic::font::FontConfig {
+        &mut self.font
+    }
 
-impl EditorBuffer {
+    /// Convenience: get font name
+    pub fn font_name(&self) -> &str {
+        self.font.font_name()
+    }
+
+    /// Convenience: get font size
+    pub fn font_size(&self) -> f64 {
+        self.font.font_size()
+    }
+
+    /// Convenience: get font color
+    pub fn font_color(&self) -> &str {
+        self.font.font_color()
+    }
+
+    /// Convenience: get line height
+    pub fn font_line_height(&self) -> f64 {
+        self.font.font_line_height()
+    }
+
+    /// Convenience: get character spacing
+    pub fn font_character_spacing(&self) -> f64 {
+        self.font.font_character_spacing()
+    }
     /// Request a redraw of the editor UI (calls the redraw_callback if set)
     pub fn request_redraw(&self) {
         if let Some(ref cb) = self.redraw_callback {
             cb();
         }
     }
+
     /// Move cursor up by one visible page (PgUp)
     pub fn move_page_up(&mut self, lines_per_page: usize) {
         if self.cursor.row > lines_per_page {
@@ -168,7 +376,23 @@ impl EditorBuffer {
         }
         self.cursor.col = self.cursor.col.min(self.lines[self.cursor.row].len());
     }
+    /// Apply settings from EditorConfig to this buffer
+    pub fn apply_config(&mut self, config: crate::config::configuration::EditorConfig) {
+        // Copy all config fields to buffer fields for runtime use
+        self.config = config.clone();
+        self.font = config.font.clone();
+        self.margin_left = config.margin_left;
+        self.margin_right = config.margin_right;
+        self.margin_top = config.margin_top;
+        self.margin_bottom = config.margin_bottom;
 
+        self.editor_bg_color = config.editor_bg_color.clone();
+        self.syntax_highlighting = config.syntax_highlighting;
+        self.search_match_color = config.search_match_color.clone();
+        self.whitespace_guide_color = config.whitespace_guide_color.clone();
+        self.show_whitespace_guides = config.show_whitespace_guides;
+        // Gutter and nested config fields are now accessed via self.config.gutter
+    }
     /// Move cursor down by one visible page (PgDn)
     pub fn move_page_down(&mut self, lines_per_page: usize) {
         let max_row = self.lines.len().saturating_sub(1);
@@ -177,24 +401,59 @@ impl EditorBuffer {
     }
     /// Cut selected text (removes and returns it)
     pub fn cut(&mut self) -> String {
-        if let Some(sel) = &self.selection {
+        if let Some(sel) = &mut self.selection {
+            sel.clamp_to_buffer(&self.lines);
             let ((row_start, col_start), (row_end, col_end)) = sel.normalized();
+            println!("[DEBUG] cut: selection=({},{}) to ({},{})", row_start, col_start, row_end, col_end);
             if row_start == row_end && row_start < self.lines.len() && col_end > col_start {
                 let cut = self.lines[row_start][col_start..col_end].to_string();
                 self.lines[row_start].replace_range(col_start..col_end, "");
+                // Clamp cursor
+                self.cursor.row = row_start.min(self.lines.len().saturating_sub(1));
+                self.cursor.col = col_start.min(self.lines.get(self.cursor.row).map(|l| l.len()).unwrap_or(0));
+                // Reset selection
+                self.selection = None;
+                // Ensure at least one line
+                if self.lines.is_empty() { self.lines.push(String::new()); }
                 return cut;
+            } else if row_start < self.lines.len() && row_end < self.lines.len() {
+                let mut result = String::new();
+                for row in row_start..=row_end {
+                    let line = &self.lines[row];
+                    if row == row_start && row == row_end {
+                        result.push_str(&line[col_start..col_end]);
+                    } else if row == row_start {
+                        result.push_str(&line[col_start..]);
+                        result.push('\n');
+                    } else if row == row_end {
+                        result.push_str(&line[..col_end]);
+                    } else {
+                        result.push_str(line);
+                        result.push('\n');
+                    }
+                }
+                // Remove the selected text from the buffer
+                self.lines[row_start].replace_range(col_start.., "");
+                self.lines[row_end].replace_range(..col_end, "");
+                if row_end > row_start + 1 {
+                    self.lines.drain(row_start + 1..row_end);
+                }
+                // Remove empty lines if needed
+                if self.lines.is_empty() { self.lines.push(String::new()); }
+                // Clamp cursor
+                self.cursor.row = row_start.min(self.lines.len().saturating_sub(1));
+                self.cursor.col = col_start.min(self.lines.get(self.cursor.row).map(|l| l.len()).unwrap_or(0));
+                // Reset selection
+                self.selection = None;
+                return result;
             }
-            // TODO: multi-line cut support
         }
+        // Always ensure at least one line
+        if self.lines.is_empty() { self.lines.push(String::new()); }
+        self.cursor.row = 0;
+        self.cursor.col = 0;
+        self.selection = None;
         String::new()
-    }
-    /// Set character spacing
-    fn set_character_spacing(&mut self, spacing: f64) {
-        self.character_spacing = spacing;
-    }
-    /// Set cursor color
-    fn set_cursor_color(&mut self, color: String) {
-        self.cursor_color = color;
     }
 
     /// Set markdown syntax colors
@@ -230,64 +489,13 @@ impl EditorBuffer {
     }
 
     /// Set whitespace/indent guide color
-    fn set_whitespace_guide_color(&mut self, color: String) {
+    pub fn set_whitespace_guide_color(&mut self, color: String) {
         self.whitespace_guide_color = color;
     }
 
     /// Toggle whitespace/indent guides
-    fn toggle_whitespace_guides(&mut self) {
+    pub fn toggle_whitespace_guides(&mut self) {
         self.show_whitespace_guides = !self.show_whitespace_guides;
-    }
-
-    /// Set active line background color
-    fn set_active_line_bg_color(&mut self, color: String) {
-        self.active_line_bg_color = color;
-    }
-
-    /// Toggle active line background
-    fn toggle_active_line_bg(&mut self) {
-        self.show_active_line_bg = !self.show_active_line_bg;
-    }
-
-    /// Set inactive line background color
-    fn set_inactive_line_bg_color(&mut self, color: String) {
-        self.inactive_line_bg_color = color;
-    }
-
-    /// Toggle inactive line background
-    fn toggle_inactive_line_bg(&mut self) {
-        self.show_inactive_line_bg = !self.show_inactive_line_bg;
-    }
-    /// Set gutter color
-    fn set_gutter_color(&mut self, color: String) {
-        self.gutter_color = color;
-    }
-
-    /// Set line number color
-    fn set_line_number_color(&mut self, color: String) {
-        self.line_number_color = color;
-    }
-
-    /// Set selected line number color
-    fn set_selected_line_number_color(&mut self, color: String) {
-        self.selected_line_number_color = color;
-    }
-
-    /// Set highlight color
-    fn set_highlight_color(&mut self, color: String) {
-        self.highlight_color = color;
-    }
-    /// Set foreground and background color
-    fn set_colors(&mut self, fg: String, bg: String) {
-        self.fg_color = fg;
-        self.bg_color = bg;
-    }
-
-    /// Set font and font size
-
-    /// Set line height
-    fn set_line_height(&mut self, height: f64) {
-        self.line_height = height;
     }
 
     /// Toggle syntax highlighting on/off
@@ -295,10 +503,6 @@ impl EditorBuffer {
         self.syntax_highlighting = !self.syntax_highlighting;
     }
 
-    /// Toggle line highlight on/off
-    fn toggle_line_highlight(&mut self) {
-        self.highlight_line = !self.highlight_line;
-    }
     /// Theme switching stub (light/dark/custom)
     fn switch_theme(&mut self, _theme_name: &str) {
         // Stub: apply theme (requires integration with GTK CSS)
@@ -328,34 +532,28 @@ impl EditorBuffer {
     fn optimize_performance(&mut self) {
         // Stub: optimize buffer and rendering for large files
     }
-    /// Undo/redo selection and cursor position (stub)
-    fn undo_selection_cursor(&mut self) {
-        // Stub: store and restore selection/cursor history
-    }
-    fn redo_selection_cursor(&mut self) {
-        // Stub: store and restore selection/cursor history
-    }
 
-} // <-- Add this closing brace to end impl EditorBuffer
+}
 
 fn main() {
     let app = Application::builder()
-        .application_id("com.example.gtkeditor")
+        .application_id("com.example.RustEditorKit")
         .build();
 
     app.connect_activate(|app| {
         let window = ApplicationWindow::builder()
             .application(app)
-            .title("GTK4-rs Editor")
+            .title("RustEditorKit")
             .default_width(800)
             .default_height(600)
             .build();
 
-        let rkit = Rc::new(RefCell::new(EditorBuffer::new()));
+        let rkit = Rc::new(RefCell::new(LegacyEditorBuffer::new()));
         let drawing_area = DrawingArea::new();
         drawing_area.set_draw_func(move |_, ctx, width, height| {
             let rkit = rkit.borrow();
-            super::render::render_editor(&rkit, ctx, width, height);
+            // TODO: Replace this with the new widget system
+            // super::render::render_editor(&rkit, ctx, width, height);
         });
 
         window.set_child(Some(&drawing_area));
@@ -365,15 +563,15 @@ fn main() {
     app.run();
 }
 
-impl EditorBuffer {
+impl LegacyEditorBuffer {
     pub fn new() -> Self {
         use syntect::parsing::SyntaxSet;
         use syntect::highlighting::ThemeSet;
         let syntax_set = SyntaxSet::load_defaults_newlines();
         let theme = ThemeSet::load_defaults().themes["InspiredGitHub"].clone();
-        EditorBuffer {
-            lines: vec!["fn main() {".to_string(), "    ".to_string(), "}".to_string()],
-            cursor: crate::cursor::EditorCursor::new(0, 0),
+        LegacyEditorBuffer {
+            lines: Vec::new(),
+            cursor: EditorCursor::new(0, 0),
             scroll_offset: 0,
             highlight_line: true,
             selection: None,
@@ -381,14 +579,9 @@ impl EditorBuffer {
             multi_selections: Vec::new(),
             theme,
             syntax_set,
-            undo_stack: Vec::new(),
-            redo_stack: Vec::new(),
             word_wrap: true,
-            font: "monospace".to_string(),
-            line_height: 20.0,
-            character_spacing: 0.0,
-            fg_color: "#222222".to_string(),
-            bg_color: "#ffffff".to_string(),
+            font: crate::corelogic::font::FontConfig::default(),
+            editor_bg_color: "#ffffff".to_string(),
             gutter_color: "#e0e0e0".to_string(),
             line_number_color: "#888888".to_string(),
             selected_line_number_color: "#0055aa".to_string(),
@@ -420,7 +613,13 @@ impl EditorBuffer {
             bottom_margin_cm: 2.0,
             left_margin_cm: 2.0,
             right_margin_cm: 2.0,
+            gutter_width: 60,
+            margin_left: 8.0,
+            margin_right: 8.0,
+            margin_top: 4.0,
+            margin_bottom: 4.0,
             redraw_callback: None,
+            config: crate::config::configuration::EditorConfig::default(),
         }
     }
 }

@@ -1,24 +1,32 @@
 // Editor logic library entry point
 // Exposes all editor modules for use as a library
 
-pub mod core;
-pub mod multicursor;
-pub mod mouse_selection;
-pub mod undo;
-pub mod clipboard;
-pub mod navigation;
-pub mod selection;
-pub mod fileio;
-pub mod editing;
-pub mod search;
-pub mod bracket;
-pub mod indent;
-pub mod a4;
-pub mod render;
-pub mod editorwidget;
+// Core logic modules (centralized)
+pub mod corelogic;
+
+// UI and platform modules
+pub mod keybinds;
+pub mod crossplatform;
+
+pub mod widget;
 pub mod imcontext;
 
-pub mod cursor;
+// Legacy modules (will be deprecated)
+pub mod core; // Legacy core, will be removed
+pub mod multicursor; // Will be merged into corelogic
+pub mod bracket; // Will be merged into corelogic
+pub mod indent; // Will be merged into corelogic
 
-// Example: re-export EditorBuffer for external use
-pub use core::EditorBuffer;
+pub mod config {
+    pub mod configuration;
+    pub mod api_config_loader;
+    pub mod editor_config_loader;
+}
+
+pub mod render;
+pub use render::render_editor;
+
+// Re-export the main types from the new centralized structure
+pub use corelogic::{EditorBuffer, EditorCursor};
+pub use corelogic::{CommandDispatcher, CommandError, CommandParams, CommandResult};
+pub use config::configuration::EditorConfig;

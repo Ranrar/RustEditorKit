@@ -1,0 +1,11 @@
+[package]
+name = "alignment_test"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+rusteditorkit = { path = "../rusteditorkit" }
+
+[dev-dependencies]
+gtk4 = "0.10"
+gdk4-sys = "0.10"

@@ -1,0 +1,98 @@
+(
+    font: (
+        font_name: "Fira Mono",             //working
+        font_size: 14.0,                    //working
+        font_color: "#222222",            //working
+        font_line_height: 16.0,             //working
+        font_character_spacing: 0.0,        //not implementet
+        font_word_spacing: 0.0,             //not implementet
+        font_letter_case: "Normal",
+        font_weight: "Normal",
+        font_style: "Normal",
+        font_stretch: "Normal",
+        font_antialias: true,               //working
+        font_hinting: "Medium",
+        font_ligatures: true,
+        font_subpixel_order: "RGB",
+        font_features: ["kern", "liga", "clig"],    //not implementet
+        font_variants: ["normal"],          //not implementet
+        font_language: "en",                //not implementet
+        font_fallbacks: ["JetBrains Mono", "DejaVu Sans Mono", "Courier New", "Monospace"],
+        font_shadow_toggle: false,          //not implementet
+        font_shadow_color: "#888888",     //not implementet
+        font_shadow_offset_x: 1.0,          //not implementet
+        font_shadow_offset_y: 1.0,          //not implementet
+        font_shadow_blur_radius: 2.0,       //not implementet
+        font_decimal_alignment: false,      //not implementet
+        font_use_core_text: false,          //not implementet
+    ),
+    cursor: (
+        cursor_color: "#000000ff",    //working
+        cursor_type: "bar",             //working
+        cursor_thickness: 2.0,          //working
+        cursor_padding_x: 0.0,          //working
+        cursor_padding_y: 0.0,          //working
+        cursor_roundness: 0.0,          //working
+        cursor_blink: true,            //working
+        cursor_blink_rate: 700,         //working
+        cursor_anti_alias: true,        //working
+        cursor_unicode_fallback: true,  //not working
+        cursor_hide_when_typing: false,  //working   //but lets add a rate
+
+    ),
+    editor_bg_color: "#f8f8ff",       //working
+    gutter: (
+        toggle: true,                   //working
+        ltr_width: 50,                  //working
+        padding: 4,                     //not working
+        bg_color: "#b39e9eff",        //working
+        border: (
+            toggle: true,               //working
+            color: "#444",              //working
+            width: 1,                   //working
+            style: "solid",             //working
+        ),
+        line_numbers: (
+            color: "#aaa",              //working
+            ltr_width: 35,              //not working
+            align: "right",             //working
+            padding: 6,                 //working
+            hover_color: "#fff",        //not working
+            active_clickable: true,     //not working
+        ),
+        font_size: 10,                  //working
+        font_weight: "normal",
+        active_line: (
+            line_number_color: "#fff",  //working
+            highlight_toggle: true,     // works but has to follow cursor
+            highlight_color: "#333",    //working
+            highlight_opacity: 0.5,     //working
+        ),
+        markers: (
+            enabled: false,                         //not implementet
+            icon_char: "●",                         //not implementet
+            icon_path: "res/icons/breakpoint.svg",  //not implementet
+            icon_size: 12,                          //not implementet
+            color: "#e06c75",                     //not implementet
+            hover_color: "#ffb3b3",               //not implementet
+            spacing: 4,                             //not implementet
+            position: "left",                       //not implementet
+        ),
+    ),
+    selection: (
+        selection_toggle: true,
+        selection_bg_color: "#0050aa",
+        selection_opacity: 0.3,
+        selection_text_color: "#ffffff",
+    ),
+    search_match_color: "#ffff99",
+    whitespace_guide_color: "#e0e0e0",    //not implementet
+    show_whitespace_guides: true,          //not implementet
+    syntax_highlighting: true,              //not working
+    auto_indent_enabled: true,              //not implementet
+    comment_enabled: true,                  //not implementet
+    margin_left: 8.0,        //working
+    margin_right: 0.0,      //not working
+    margin_top: 0.0,       //working
+    margin_bottom: 0.0,   //not working
+)

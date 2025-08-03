@@ -3,8 +3,6 @@
 
 use gtk4::prelude::*;
 use gtk4::IMContextSimple;
-use std::rc::Rc;
-use std::cell::RefCell;
 
 pub struct EditorIMContext {
     pub im_context: IMContextSimple,
