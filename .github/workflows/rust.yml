@@ -17,6 +17,8 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
+      - name: Set git line endings
+        run: git config --global core.autocrlf input
       - uses: actions/checkout@v4
 
       # Linux setup
@@ -48,25 +50,6 @@ jobs:
             mingw-w64-x86_64-cairo
             mingw-w64-x86_64-pango
 
-      - name: Add MSYS2 to PATH (Windows only)
-        if: runner.os == 'Windows'
-        run: echo "C:\\msys64\\mingw64\\bin" >> $GITHUB_PATH
-
-      # Install Rust and Cargo
-      - name: Install Rust and Cargo
-        if: runner.os == 'Windows'
-        run: |
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-          source $HOME/.cargo/env
-
-      # Build & test inside MSYS2 shell on Windows
-      - name: Build & test in MSYS2 (Windows only)
-        if: runner.os == 'Windows'
-        shell: msys2 {0}
-        run: |
-          cargo build --workspace --verbose
-          cargo test --workspace --verbose
-
       # Cache Rust build artifacts
       - name: Cache cargo registry/build
         uses: actions/cache@v4
@@ -79,9 +62,20 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-
 
-      # Install Rust toolchain
-      - name: Setup Rust
-        run: rustup toolchain install stable --profile minimal
+      # Install Rust toolchain (Windows)
+      - name: Setup Rust (Windows)
+        if: runner.os == 'Windows'
+        shell: msys2 {0}
+        run: |
+          rustup toolchain install stable --profile minimal
+
+      # Build & test in MSYS2 (Windows only)
+      - name: Build & test in MSYS2 (Windows only)
+        if: runner.os == 'Windows'
+        shell: msys2 {0}
+        run: |
+          cargo build --workspace --verbose
+          cargo test --workspace --verbose
 
       # Final build & test on Linux/macOS (fallback for non-Windows)
       - name: Build & test (others)
