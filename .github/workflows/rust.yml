@@ -24,9 +24,7 @@ jobs:
         run: |
           sudo apt update
           sudo apt upgrade
-          sudo add-apt-repository ppa:gnome3-team/gnome3
-          sudo apt update
-          sudo apt install -y libgtk-4-dev libcairo2-dev libpango1.0-dev libglib2.0-dev
+          sudo apt install -y libgtk-4-dev libcairo2-dev libpango1.0-dev libglib2.0-dev pkg-config
 
       - name: Install system dependencies (macOS only)
         if: runner.os == 'macOS'
