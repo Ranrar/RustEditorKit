@@ -62,24 +62,21 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-
 
-      # Install Rust in MSYS2 (Windows)
-      - name: Install Rust in MSYS2 (Windows)
+      # Install Rust via rustup (Windows)
+      - name: Install Rust via rustup (Windows)
         if: runner.os == 'Windows'
-        shell: msys2 {0}
         run: |
-          pacman -S --noconfirm mingw-w64-x86_64-rust
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          echo "C:\Users\runneradmin\.cargo\bin" >> $GITHUB_PATH
 
-      # Install Rust toolchain (Windows)
-      - name: Setup Rust (Windows)
+      # Add MSYS2 mingw64/bin to PATH (Windows)
+      - name: Add MSYS2 mingw64/bin to PATH (Windows)
         if: runner.os == 'Windows'
-        shell: msys2 {0}
-        run: |
-          rustup toolchain install stable --profile minimal
+        run: echo "C:\msys64\mingw64\bin" >> $GITHUB_PATH
 
-      # Build & test in MSYS2 (Windows only)
-      - name: Build & test in MSYS2 (Windows only)
+      # Build & test (Windows only)
+      - name: Build & test (Windows only)
         if: runner.os == 'Windows'
-        shell: msys2 {0}
         run: |
           cargo build --workspace --verbose
           cargo test --workspace --verbose
