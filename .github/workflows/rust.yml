@@ -22,10 +22,11 @@ jobs:
       - name: Install system dependencies (Linux only)
         if: runner.os == 'Linux'
         run: |
-          sudo apt-get update
-          sudo apt-get install -y pkg-config libglib2.0-dev libcairo2-dev libpango1.0-dev \
-            libfontconfig1-dev libfreetype6-dev libharfbuzz-dev libgtk-4-dev \
-            libgdk-4-dev libgtk-4-dev
+          sudo apt update
+          sudo apt upgrade
+          sudo add-apt-repository ppa:gnome3-team/gnome3
+          sudo apt update
+          sudo apt install -y libgtk-4-dev libcairo2-dev libpango1.0-dev libglib2.0-dev
 
       - name: Install system dependencies (macOS only)
         if: runner.os == 'macOS'
