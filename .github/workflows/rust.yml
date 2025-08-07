@@ -35,51 +35,52 @@ jobs:
           brew update
           brew install pkg-config glib cairo pango fontconfig freetype harfbuzz gtk4
 
-      # Windows setup via MSYS2 for GTK4 & pkgconf
-      - name: Setup MSYS2 + GTK4 dependencies (Windows)
+      # Windows setup (MSVC toolchain, pkg-config-lite, GTK4 env)
+      - name: Install pkg-config-lite (Windows)
         if: runner.os == 'Windows'
-        uses: msys2/setup-msys2@v2
-        with:
-          msystem: MINGW64
-          update: true
-          install: |
-            mingw-w64-x86_64-pkgconf
-            mingw-w64-x86_64-gcc
-            mingw-w64-x86_64-glib2
-            mingw-w64-x86_64-gtk4
-            mingw-w64-x86_64-cairo
-            mingw-w64-x86_64-pango
+        run: |
+          Invoke-WebRequest -UserAgent "Wget" -Uri https://downloads.sourceforge.net/project/pkgconfiglite/0.28-1/pkg-config-lite-0.28-1_bin-win32.zip -OutFile pkg_config_lite.zip -MaximumRetryCount 5
+          Expand-Archive pkg_config_lite.zip -DestinationPath C:\
+          echo "C:\pkg-config-lite-0.28-1\bin" >> $GITHUB_PATH
 
-      # Cache Rust build artifacts
-      - name: Cache cargo registry/build
+      - name: Add GTK4 binaries to PATH (Windows)
+        if: runner.os == 'Windows'
+        run: echo "C:\gnome\bin" >> $GITHUB_PATH
+
+      - name: Set PKG_CONFIG_PATH (Windows)
+        if: runner.os == 'Windows'
+        run: echo "PKG_CONFIG_PATH=C:\gnome\lib\pkgconfig" >> $GITHUB_ENV
+
+      - name: Cache GTK4 build (Windows)
+        if: runner.os == 'Windows'
         uses: actions/cache@v4
         with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          path: C:/gnome
+          key: ${{ runner.os }}-gtk4-19
           restore-keys: |
-            ${{ runner.os }}-cargo-
+            ${{ runner.os }}-gtk4-19
 
-      # Install Rust via rustup (Windows)
-      - name: Install Rust via rustup (Windows)
+      - name: Install Rust toolchain (Windows)
         if: runner.os == 'Windows'
-        run: |
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-          echo "C:\Users\runneradmin\.cargo\bin" >> $GITHUB_PATH
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          components: clippy
 
-      # Add MSYS2 mingw64/bin to PATH (Windows)
-      - name: Add MSYS2 mingw64/bin to PATH (Windows)
+      - name: Build (Windows)
         if: runner.os == 'Windows'
-        run: echo "C:\msys64\mingw64\bin" >> $GITHUB_PATH
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --workspace --verbose
 
-      # Build & test (Windows only)
-      - name: Build & test (Windows only)
+      - name: Test (Windows)
         if: runner.os == 'Windows'
-        run: |
-          cargo build --workspace --verbose
-          cargo test --workspace --verbose
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --workspace --verbose
 
       # Final build & test on Linux/macOS (fallback for non-Windows)
       - name: Build & test (others)
