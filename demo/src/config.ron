@@ -1,9 +1,9 @@
 (
     font: (
         font_name: "Fira Mono",             //working
-        font_size: 14.0,                    //working
+        font_size: 11.0,                    //working
         font_color: "#222222",            //working
-        font_line_height: 16.0,             //working
+        font_paragraph_spacing: 0.0,        //working
         font_character_spacing: 0.0,        //not implementet
         font_word_spacing: 0.0,             //not implementet
         font_letter_case: "Normal",
@@ -33,17 +33,17 @@
         cursor_padding_x: 0.0,          //working
         cursor_padding_y: 0.0,          //working
         cursor_roundness: 0.0,          //working
-        cursor_blink: true,            //working
+        cursor_blink: false,            //working
         cursor_blink_rate: 700,         //working
         cursor_anti_alias: true,        //working
         cursor_unicode_fallback: true,  //not working
-        cursor_hide_when_typing: false,  //working   //but lets add a rate
+        cursor_hide_when_typing: false, //working   //but lets add a rate
 
     ),
     editor_bg_color: "#f8f8ff",       //working
     gutter: (
         toggle: true,                   //working
-        ltr_width: 50,                  //working
+        ltr_width: 30,                  //working
         padding: 4,                     //not working
         bg_color: "#b39e9eff",        //working
         border: (
@@ -64,9 +64,9 @@
         font_weight: "normal",
         active_line: (
             line_number_color: "#fff",  //working
-            highlight_toggle: true,     // works but has to follow cursor
+            highlight_toggle: true,     //working
             highlight_color: "#333",    //working
-            highlight_opacity: 0.5,     //working
+            highlight_opacity: 0.2,     //working
         ),
         markers: (
             enabled: false,                         //not implementet
@@ -93,6 +93,6 @@
     comment_enabled: true,                  //not implementet
     margin_left: 8.0,        //working
     margin_right: 0.0,      //not working
-    margin_top: 0.0,       //working
+    margin_top: -16.0,       //working
     margin_bottom: 0.0,   //not working
 )

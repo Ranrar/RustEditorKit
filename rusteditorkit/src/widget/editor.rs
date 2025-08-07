@@ -18,8 +18,17 @@ pub struct EditorWidget {
     pub im_context: EditorIMContext,
     pub blink_source_id: Rc<RefCell<Option<glib::SourceId>>>,
     pub keymap: std::collections::HashMap<EditorAction, KeyCombo>,
+    /// Cached layout metrics and font description for event handlers
+    pub cached_metrics: RefCell<Option<CachedEditorMetrics>>,
+    /// Cached Pango context for event handlers
+    pub cached_pango_ctx: RefCell<Option<gtk4::pango::Context>>,
 }
 
+/// Struct to cache layout metrics and font description
+#[derive(Clone)]
+pub struct CachedEditorMetrics {
+    pub layout: crate::render::layout::LayoutMetrics,
+}
 impl EditorWidget {
     /// Connects a debug handler to print key events and dispatched actions
     pub fn connect_keybind_debug(&self) {
@@ -105,9 +114,45 @@ impl EditorWidget {
 
         // Cursor blinking logic is now managed only by update_cursor_config after config is loaded
 
-        let widget = Self { buffer, drawing_area, im_context, blink_source_id, keymap };
+        let widget = Self {
+            buffer,
+            drawing_area,
+            im_context,
+            blink_source_id,
+            keymap,
+            cached_metrics: RefCell::new(None),
+            cached_pango_ctx: RefCell::new(None),
+        };
         widget.update_cursor_config();
+        widget.initialize_cache();
         widget
+    }
+
+    /// Initialize cached metrics and Pango context immediately after widget creation
+    pub fn initialize_cache(&self) {
+        // Create a dummy Cairo context for initial metrics
+        use cairo::ImageSurface;
+        use cairo::Context;
+        let surface = ImageSurface::create(cairo::Format::ARgb32, 1, 1).expect("Failed to create dummy surface");
+        let ctx = Context::new(&surface).expect("Failed to create Cairo context");
+        let buf = self.buffer.borrow();
+        let layout = crate::render::layout::LayoutMetrics::calculate(&buf, &ctx);
+        let font_cfg = &buf.config.font;
+        let font_string = format!("{} {}", font_cfg.font_name(), font_cfg.font_size());
+        let font_desc = gtk4::pango::FontDescription::from_string(&font_string);
+        let pango_layout = pangocairo::functions::create_layout(&ctx);
+        pango_layout.set_font_description(Some(&font_desc));
+        let row = buf.cursor.row.min(buf.lines.len().saturating_sub(1));
+        let line_text = buf.lines.get(row).cloned().unwrap_or_default();
+        pango_layout.set_text(&line_text);
+        // Cache metrics for event handlers
+        let metrics = CachedEditorMetrics {
+            layout,
+        };
+        *self.cached_metrics.borrow_mut() = Some(metrics);
+        // Cache Pango context for event handlers
+        let pango_ctx = pango_layout.context().clone();
+        *self.cached_pango_ctx.borrow_mut() = Some(pango_ctx);
     }
 
     /// Get a reference to the buffer (for integration/testing)
@@ -123,6 +168,8 @@ impl EditorWidget {
     /// Connect the draw signal using the modular render system
     pub fn connect_draw_signal(&self) {
         let buffer = self.buffer.clone();
+        let cached_metrics = self.cached_metrics.clone();
+        let cached_pango_ctx = self.cached_pango_ctx.clone();
         self.drawing_area.set_draw_func(move |_area, ctx, width, height| {
             let buf = buffer.borrow();
             let layout = LayoutMetrics::calculate(&buf, ctx);
@@ -141,8 +188,20 @@ impl EditorWidget {
             let row = buf.cursor.row.min(buf.lines.len().saturating_sub(1));
             let line_text = buf.lines.get(row).cloned().unwrap_or_default();
             pango_layout.set_text(&line_text);
-            let y_line = layout.top_offset + layout.line_height * row as f64;
+            // Use unified y-offsets from corelogic/layout.rs
+            let y_offsets = buf.line_y_offsets(layout.line_height, buf.config.font.font_paragraph_spacing(), layout.top_offset);
+            let y_line = y_offsets.get(row).copied().unwrap_or(layout.top_offset);
             crate::render::cursor::render_cursor_layer(&buf, ctx, &pango_layout, &layout, y_line);
+
+            // Cache metrics for event handlers
+            let metrics = CachedEditorMetrics {
+                layout,
+            };
+            *cached_metrics.borrow_mut() = Some(metrics);
+
+            // Cache Pango context for event handlers
+            let pango_ctx = pango_layout.context().clone();
+            *cached_pango_ctx.borrow_mut() = Some(pango_ctx);
         });
     }
 

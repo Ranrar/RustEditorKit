@@ -220,159 +220,30 @@ impl EditorBuffer {
         }
     }
 
-    /// Convert screen coordinates to buffer position (row, col)
-    /// This is a simplified version - in a real implementation you'd need layout metrics
-    pub fn screen_to_buffer_position(&self, x: f64, y: f64, line_height: f64, char_width: f64, left_margin: f64, top_margin: f64) -> (usize, usize) {
-        // Calculate row from y coordinate
-        let row = ((y - top_margin) / line_height).max(0.0) as usize;
-        let row = row.min(self.lines.len().saturating_sub(1));
-        
-        // Calculate column from x coordinate
-        let col = ((x - left_margin) / char_width).max(0.0) as usize;
-        let col = if row < self.lines.len() {
-            col.min(self.lines[row].chars().count())
-        } else {
-            0
-        };
-        
-        (row, col)
+    // ...existing code...
+    // Pointer/mouse logic is now delegated to corelogic::pointer
+    pub fn screen_to_buffer_position(&self, x: f64, y: f64, layout: &crate::render::layout::LayoutMetrics, pango_ctx: &gtk4::pango::Context, font_desc: &gtk4::pango::FontDescription) -> (usize, usize) {
+        crate::corelogic::pointer::screen_to_buffer_position(self, x, y, layout, pango_ctx, font_desc)
     }
 
-    /// Handle mouse click - sets cursor position and clears selection (unless Shift is held)
-    pub fn handle_mouse_click(&mut self, x: f64, y: f64, shift_held: bool, line_height: f64, char_width: f64, left_margin: f64, top_margin: f64) {
-        let (row, col) = self.screen_to_buffer_position(x, y, line_height, char_width, left_margin, top_margin);
-        
-        if shift_held && self.selection.is_some() {
-            // Extend existing selection
-            if let Some(sel) = &mut self.selection {
-                sel.end_row = row;
-                sel.end_col = col;
-                sel.clamp_to_buffer(&self.lines);
-            }
-        } else {
-            // Clear selection and set cursor position
-            self.selection = None;
-            self.cursor.row = row;
-            self.cursor.col = col;
-        }
-        
-        // Update mouse state
-        use crate::corelogic::buffer::MouseState;
-        self.mouse_state = if shift_held {
-            MouseState::ExtendingSelection
-        } else {
-            MouseState::Selecting { start_row: row, start_col: col }
-        };
+    pub fn handle_mouse_click(&mut self, x: f64, y: f64, shift_held: bool, layout: &crate::render::layout::LayoutMetrics, pango_ctx: &gtk4::pango::Context, font_desc: &gtk4::pango::FontDescription) {
+        crate::corelogic::pointer::handle_mouse_click(self, x, y, shift_held, layout, pango_ctx, font_desc)
     }
 
-    /// Handle mouse drag - creates or extends selection
-    pub fn handle_mouse_drag(&mut self, x: f64, y: f64, line_height: f64, char_width: f64, left_margin: f64, top_margin: f64) {
-        let (row, col) = self.screen_to_buffer_position(x, y, line_height, char_width, left_margin, top_margin);
-        
-        use crate::corelogic::buffer::MouseState;
-        match self.mouse_state {
-            MouseState::Selecting { start_row, start_col } => {
-                // Create new selection from start to current position
-                let mut sel = crate::corelogic::selection::Selection::new(start_row, start_col);
-                sel.end_row = row;
-                sel.end_col = col;
-                sel.clamp_to_buffer(&self.lines);
-                
-                // Only set selection if there's an actual area selected
-                if sel.is_active() {
-                    self.selection = Some(sel);
-                } else {
-                    self.selection = None;
-                }
-                
-                // Update cursor to current position
-                self.cursor.row = row;
-                self.cursor.col = col;
-            },
-            MouseState::ExtendingSelection => {
-                // Extend existing selection
-                if let Some(sel) = &mut self.selection {
-                    sel.end_row = row;
-                    sel.end_col = col;
-                    sel.clamp_to_buffer(&self.lines);
-                }
-                
-                // Update cursor to current position
-                self.cursor.row = row;
-                self.cursor.col = col;
-            },
-            MouseState::Idle => {
-                // Start new selection
-                self.mouse_state = MouseState::Selecting { start_row: row, start_col: col };
-            }
-        }
+    pub fn handle_mouse_drag(&mut self, x: f64, y: f64, layout: &crate::render::layout::LayoutMetrics, pango_ctx: &gtk4::pango::Context, font_desc: &gtk4::pango::FontDescription) {
+        crate::corelogic::pointer::handle_mouse_drag(self, x, y, layout, pango_ctx, font_desc)
     }
 
-    /// Handle mouse release - finalize selection
     pub fn handle_mouse_release(&mut self) {
-        use crate::corelogic::buffer::MouseState;
-        self.mouse_state = MouseState::Idle;
+        crate::corelogic::pointer::handle_mouse_release(self)
     }
 
-    /// Handle double-click - select word at position
-    pub fn handle_double_click(&mut self, x: f64, y: f64, line_height: f64, char_width: f64, left_margin: f64, top_margin: f64) {
-        let (row, col) = self.screen_to_buffer_position(x, y, line_height, char_width, left_margin, top_margin);
-        
-        if row < self.lines.len() {
-            let line = &self.lines[row];
-            let chars: Vec<char> = line.chars().collect();
-            
-            if col < chars.len() {
-                // Find word boundaries
-                let mut start_col = col;
-                let mut end_col = col;
-                
-                // Move start back to beginning of word
-                while start_col > 0 && (chars[start_col - 1].is_alphanumeric() || chars[start_col - 1] == '_') {
-                    start_col -= 1;
-                }
-                
-                // Move end forward to end of word
-                while end_col < chars.len() && (chars[end_col].is_alphanumeric() || chars[end_col] == '_') {
-                    end_col += 1;
-                }
-                
-                // Create selection for the word
-                if start_col < end_col {
-                    let mut sel = crate::corelogic::selection::Selection::new(row, start_col);
-                    sel.end_row = row;
-                    sel.end_col = end_col;
-                    self.selection = Some(sel);
-                    
-                    // Position cursor at end of selection
-                    self.cursor.row = row;
-                    self.cursor.col = end_col;
-                }
-            }
-        }
-        
-        use crate::corelogic::buffer::MouseState;
-        self.mouse_state = MouseState::Idle;
+    pub fn handle_double_click(&mut self, x: f64, y: f64, layout: &crate::render::layout::LayoutMetrics, pango_ctx: &gtk4::pango::Context, font_desc: &gtk4::pango::FontDescription) {
+        crate::corelogic::pointer::handle_double_click(self, x, y, layout, pango_ctx, font_desc)
     }
 
-    /// Handle triple-click - select entire line
-    pub fn handle_triple_click(&mut self, x: f64, y: f64, line_height: f64, char_width: f64, left_margin: f64, top_margin: f64) {
-        let (row, _) = self.screen_to_buffer_position(x, y, line_height, char_width, left_margin, top_margin);
-        
-        if row < self.lines.len() {
-            // Select entire line
-            let mut sel = crate::corelogic::selection::Selection::new(row, 0);
-            sel.end_row = row;
-            sel.end_col = self.lines[row].chars().count();
-            self.selection = Some(sel);
-            
-            // Position cursor at end of line
-            self.cursor.row = row;
-            self.cursor.col = self.lines[row].chars().count();
-        }
-        
-        use crate::corelogic::buffer::MouseState;
-        self.mouse_state = MouseState::Idle;
+    pub fn handle_triple_click(&mut self, x: f64, y: f64, layout: &crate::render::layout::LayoutMetrics, pango_ctx: &gtk4::pango::Context, font_desc: &gtk4::pango::FontDescription) {
+        crate::corelogic::pointer::handle_triple_click(self, x, y, layout, pango_ctx, font_desc)
     }
 
     /// Get the currently selected text

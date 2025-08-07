@@ -352,8 +352,8 @@ impl LegacyEditorBuffer {
     }
 
     /// Convenience: get line height
-    pub fn font_line_height(&self) -> f64 {
-        self.font.font_line_height()
+    pub fn font_paragraph_spacing(&self) -> f64 {
+        self.font.font_paragraph_spacing()
     }
 
     /// Convenience: get character spacing

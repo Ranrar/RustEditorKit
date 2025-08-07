@@ -71,6 +71,6 @@ window.set_child(Some(editor.widget()));
 **Project Status:** Alpha - Most core features working, API may change
 
 **Known Issues in Current Build**
-- Mouse selection and text selection are not visually working as expected.
+- Mouse selection are not visually working as expected.
 - Arrow key navigation has issues with multi-byte UTF-8 sequences.
 - Scrollbar is not working (it hasn’t been implemented yet).

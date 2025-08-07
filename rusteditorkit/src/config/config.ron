@@ -3,7 +3,7 @@
         font_name: "Fira Mono",             //working
         font_size: 14.0,                    //working
         font_color: "#222222",            //working
-        font_line_height: 16.0,             //working
+        font_paragraph_spacing: 16.0,             //working
         font_character_spacing: 0.0,        //not implementet
         font_word_spacing: 0.0,             //not implementet
         font_letter_case: "Normal",

@@ -28,8 +28,8 @@
 - [ ] User presence (remote user cursors, names, colors)
 
 ## Page Layout & Document Format
-- [x] Margin and A4 page support  
-- [x] A4 page logic  
+- [ ] Margin and A4 page support  
+- [ ] A4 page logic  
 - [ ] US Letter page logic 
 - [ ] Print/export (PDF/HTML/Markdown)
 - [ ] HTML background template (A4/US Letter, theme-aware)

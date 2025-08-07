@@ -10,7 +10,7 @@ pub struct FontConfig {
     pub font_color: String,
 
     // === Layout & Spacing ===
-    pub font_line_height: f64,
+    pub font_paragraph_spacing: f64,
     pub font_character_spacing: f64,
     pub font_word_spacing: f64,
     pub font_letter_case: String, // "Normal", "Uppercase", "Lowercase", "SmallCaps"
@@ -53,7 +53,7 @@ impl Default for FontConfig {
             font_name: "Fira Code".to_string(),
             font_size: 14.0,
             font_color: "#222222".to_string(),
-            font_line_height: 22.0,
+            font_paragraph_spacing: 22.0,
             font_character_spacing: 0.0,
             font_word_spacing: 0.0,
             font_letter_case: "Normal".to_string(),
@@ -92,8 +92,8 @@ impl FontConfig {
     pub fn font_size(&self) -> f64 { self.font_size }
     pub fn set_font_color(&mut self, color: &str) { self.font_color = color.to_string(); }
     pub fn font_color(&self) -> &str { &self.font_color }
-    pub fn set_font_line_height(&mut self, h: f64) { self.font_line_height = h; }
-    pub fn font_line_height(&self) -> f64 { self.font_line_height }
+    pub fn set_font_paragraph_spacing(&mut self, h: f64) { self.font_paragraph_spacing = h; }
+    pub fn font_paragraph_spacing(&self) -> f64 { self.font_paragraph_spacing }
     pub fn set_font_character_spacing(&mut self, s: f64) { self.font_character_spacing = s; }
     pub fn font_character_spacing(&self) -> f64 { self.font_character_spacing }
     pub fn set_font_word_spacing(&mut self, s: f64) { self.font_word_spacing = s; }

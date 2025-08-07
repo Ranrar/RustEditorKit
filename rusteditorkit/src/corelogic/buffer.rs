@@ -3,8 +3,10 @@
 //! This module contains the main EditorBuffer struct and basic methods
 //! that don't fit into other specific categories.
 
+
 use syntect::parsing::SyntaxSet;
 use syntect::highlighting::ThemeSet;
+use crate::corelogic::pointer::MouseState;
 
 /// Represents the position of the cursor in the editor (row, col).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -19,22 +21,6 @@ impl EditorCursor {
     }
 }
 
-/// Mouse interaction state for selection handling
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum MouseState {
-    /// No mouse interaction
-    Idle,
-    /// Mouse is down and dragging to select
-    Selecting { start_row: usize, start_col: usize },
-    /// Mouse is down and dragging to extend selection
-    ExtendingSelection,
-}
-
-impl Default for MouseState {
-    fn default() -> Self {
-        MouseState::Idle
-    }
-}
 
 /// The main buffer struct for the custom code editor.
 /// Holds all text, cursor, selection, undo/redo, theme, and rendering state.
@@ -179,11 +165,11 @@ impl EditorBuffer {
             }
         }
     }
-    /// Returns the unified line height for rendering (max of text font size, gutter font size, font_line_height)
+    /// Returns the unified line height for rendering (max of text font size, gutter font size, font_paragraph_spacing)
     pub fn unified_line_height(&self) -> f64 {
         let text_size = self.font_size();
         let gutter_size = self.config.gutter.font_size as f64;
-        let line_height = self.font_line_height();
+        let line_height = self.font_paragraph_spacing();
         text_size.max(gutter_size).max(line_height)
     }
     /// Create a new empty EditorBuffer with default configuration
@@ -270,8 +256,8 @@ impl EditorBuffer {
     }
 
     /// Convenience: get line height
-    pub fn font_line_height(&self) -> f64 {
-        self.config.font.font_line_height()
+    pub fn font_paragraph_spacing(&self) -> f64 {
+        self.config.font.font_paragraph_spacing()
     }
 
     /// Convenience: get character spacing

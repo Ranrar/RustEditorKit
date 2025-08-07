@@ -202,7 +202,9 @@ pub fn render_gutter(
     // (gutter_line_height is now measured in render_editor and maxed with editor font height)
 
     for i in 0..line_count {
-        let y = top_offset + i as f64 * global_line_height;
+        // Use unified y-offsets for perfect alignment with text lines
+        let y_offsets = rkit.line_y_offsets(global_line_height, rkit.config.font.font_paragraph_spacing(), top_offset);
+        let y = y_offsets.get(i).copied().unwrap_or(top_offset);
         // ...highlight is now drawn in render/highlight.rs...
         // Line number color
         let color = if i == active_row {

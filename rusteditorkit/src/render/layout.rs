@@ -12,7 +12,7 @@ pub struct FontMetrics {
     pub average_char_width: f64,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct LayoutMetrics {
     pub line_height: f64,
     pub text_metrics: FontMetrics,
@@ -53,9 +53,8 @@ impl LayoutMetrics {
         let gutter_font_desc = text_font_desc.clone();
         let mut text_metrics = FontMetrics::calculate(ctx, &text_font_desc);
         let mut gutter_metrics = FontMetrics::calculate(ctx, &gutter_font_desc);
-        let line_height = text_metrics.height
-            .max(gutter_metrics.height)
-            .max(font_cfg.font_line_height());
+        // Always use the maximum of text or gutter heights for line_height
+        let line_height = text_metrics.height.max(gutter_metrics.height);
         text_metrics.baseline_offset = (line_height - text_metrics.height) / 2.0 + text_metrics.baseline;
         gutter_metrics.baseline_offset = (line_height - gutter_metrics.height) / 2.0 + gutter_metrics.baseline;
         let text_left_offset = if rkit.config.gutter.toggle {

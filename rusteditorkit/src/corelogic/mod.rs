@@ -13,8 +13,9 @@ pub mod clipboard;
 pub mod search;
 pub mod fileio;
 pub mod selection;
-// pub mod layout;  // Temporarily disabled - needs config updates
+pub mod layout;
 pub mod dispatcher;
+pub mod pointer;
 
 // Re-export the main types for convenience
 pub use buffer::{EditorBuffer, EditorCursor};
