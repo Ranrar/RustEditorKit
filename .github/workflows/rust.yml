@@ -33,7 +33,7 @@ jobs:
           brew update
           brew install pkg-config glib cairo pango fontconfig freetype harfbuzz gtk4
 
-      # Windows setup with MSYS2
+      # Windows setup via MSYS2 for GTK4 & pkgconf
       - name: Setup MSYS2 + GTK4 dependencies (Windows)
         if: runner.os == 'Windows'
         uses: msys2/setup-msys2@v2
@@ -42,31 +42,43 @@ jobs:
           update: true
           install: |
             mingw-w64-x86_64-pkgconf
+            mingw-w64-x86_64-gcc
             mingw-w64-x86_64-glib2
             mingw-w64-x86_64-gtk4
             mingw-w64-x86_64-cairo
             mingw-w64-x86_64-pango
-      
+
       - name: Add MSYS2 to PATH (Windows only)
         if: runner.os == 'Windows'
         run: echo "C:\\msys64\\mingw64\\bin" >> $GITHUB_PATH
-      
-      - name: Build & test in MSYS2 (Windows)
+
+      # Build & test inside MSYS2 shell on Windows
+      - name: Build & test in MSYS2 (Windows only)
         if: runner.os == 'Windows'
         shell: msys2 {0}
+        run: |
+          cargo build --workspace --verbose
+          cargo test --workspace --verbose
 
-      # Caching
+      # Cache Rust build artifacts
       - name: Cache cargo registry/build
         uses: actions/cache@v4
         with:
-          path: ~/.cargo/registry
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-cargo-
+          restore-keys: |
+            ${{ runner.os }}-cargo-
 
+      # Install Rust toolchain
       - name: Setup Rust
         run: rustup toolchain install stable --profile minimal
 
-      - name: Build & test
+      # Final build & test on Linux/macOS (fallback for non-Windows)
+      - name: Build & test (others)
+        if: runner.os != 'Windows'
         run: |
           cargo build --workspace --verbose
           cargo test --workspace --verbose
