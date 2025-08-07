@@ -34,7 +34,7 @@ jobs:
           brew install pkg-config glib cairo pango fontconfig freetype harfbuzz gtk4
 
       # Windows setup with MSYS2
-      - name: Setup MSYS2 + GTK4 dependencies (Windows only)
+      - name: Setup MSYS2 + GTK4 dependencies (Windows)
         if: runner.os == 'Windows'
         uses: msys2/setup-msys2@v2
         with:
@@ -46,11 +46,14 @@ jobs:
             mingw-w64-x86_64-gtk4
             mingw-w64-x86_64-cairo
             mingw-w64-x86_64-pango
-          shell: msys2 {0}
-
+      
       - name: Add MSYS2 to PATH (Windows only)
         if: runner.os == 'Windows'
         run: echo "C:\\msys64\\mingw64\\bin" >> $GITHUB_PATH
+      
+      - name: Build & test in MSYS2 (Windows)
+        if: runner.os == 'Windows'
+        shell: msys2 {0}
 
       # Caching
       - name: Cache cargo registry/build
