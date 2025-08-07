@@ -96,7 +96,7 @@ jobs:
           command: test
           args: --workspace --verbose
 
-      # Final build & test on Linux/macOS (fallback for non-Windows)
+      # Final build & test on Linux/macOS
       - name: Build & test (others)
         if: runner.os != 'Windows'
         run: |
