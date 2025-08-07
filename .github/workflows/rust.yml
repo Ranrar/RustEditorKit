@@ -42,6 +42,8 @@ jobs:
           Invoke-WebRequest -UserAgent "Wget" -Uri https://downloads.sourceforge.net/project/pkgconfiglite/0.28-1/pkg-config-lite-0.28-1_bin-win32.zip -OutFile pkg_config_lite.zip -MaximumRetryCount 5
           Expand-Archive pkg_config_lite.zip -DestinationPath C:\
           echo "C:\pkg-config-lite-0.28-1\bin" >> $GITHUB_PATH
+        env:
+          PATH: C:\pkg-config-lite-0.28-1\bin;C:\gnome\bin;${{ env.PATH }}
       - name: Verify pkg-config.exe exists (Windows)
         if: runner.os == 'Windows'
         run: |
@@ -51,19 +53,27 @@ jobs:
           } else {
             Write-Host "pkg-config.exe found."
           }
+        env:
+          PATH: C:\pkg-config-lite-0.28-1\bin;C:\gnome\bin;${{ env.PATH }}
       - name: Print PATH and pkg-config version (Windows)
         if: runner.os == 'Windows'
         run: |
           Write-Host "PATH: $env:PATH"
           & "C:\pkg-config-lite-0.28-1\bin\pkg-config.exe" --version
+        env:
+          PATH: C:\pkg-config-lite-0.28-1\bin;C:\gnome\bin;${{ env.PATH }}
 
       - name: Add GTK4 binaries to PATH (Windows)
         if: runner.os == 'Windows'
         run: echo "C:\gnome\bin" >> $GITHUB_PATH
+        env:
+          PATH: C:\pkg-config-lite-0.28-1\bin;C:\gnome\bin;${{ env.PATH }}
 
       - name: Set PKG_CONFIG_PATH (Windows)
         if: runner.os == 'Windows'
         run: echo "PKG_CONFIG_PATH=C:\gnome\lib\pkgconfig" >> $GITHUB_ENV
+        env:
+          PATH: C:\pkg-config-lite-0.28-1\bin;C:\gnome\bin;${{ env.PATH }}
 
       - name: Cache GTK4 build (Windows)
         if: runner.os == 'Windows'
@@ -73,6 +83,8 @@ jobs:
           key: ${{ runner.os }}-gtk4-19
           restore-keys: |
             ${{ runner.os }}-gtk4-19
+        env:
+          PATH: C:\pkg-config-lite-0.28-1\bin;C:\gnome\bin;${{ env.PATH }}
 
       - name: Install Rust toolchain (Windows)
         if: runner.os == 'Windows'
@@ -81,6 +93,8 @@ jobs:
           profile: minimal
           toolchain: stable
           components: clippy
+        env:
+          PATH: C:\pkg-config-lite-0.28-1\bin;C:\gnome\bin;${{ env.PATH }}
 
       - name: Build (Windows)
         if: runner.os == 'Windows'
@@ -88,6 +102,8 @@ jobs:
         with:
           command: build
           args: --workspace --verbose
+        env:
+          PATH: C:\pkg-config-lite-0.28-1\bin;C:\gnome\bin;${{ env.PATH }}
 
       - name: Test (Windows)
         if: runner.os == 'Windows'
@@ -95,6 +111,8 @@ jobs:
         with:
           command: test
           args: --workspace --verbose
+        env:
+          PATH: C:\pkg-config-lite-0.28-1\bin;C:\gnome\bin;${{ env.PATH }}
 
       # Final build & test on Linux/macOS
       - name: Build & test (others)
