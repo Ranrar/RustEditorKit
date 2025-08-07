@@ -34,6 +34,26 @@ jobs:
           brew update
           brew install pkg-config glib cairo pango fontconfig freetype harfbuzz gtk4
 
+      - name: Setup MSYS2 and dependencies (Windows only)
+        if: runner.os == 'Windows'
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: |
+            mingw-w64-x86_64-pkg-config
+            mingw-w64-x86_64-glib2
+            mingw-w64-x86_64-gtk4
+            mingw-w64-x86_64-cairo
+            mingw-w64-x86_64-pango
+            mingw-w64-x86_64-gdk-pixbuf2
+            mingw-w64-x86_64-icu
+            mingw-w64-x86_64-gobject-introspection
+
+      - name: Add MSYS2 to PATH (Windows only)
+        if: runner.os == 'Windows'
+        run: echo "C:\\msys64\\mingw64\\bin" >> $GITHUB_PATH
+
       - name: Cache cargo registry and build
         uses: actions/cache@v4
         with:
