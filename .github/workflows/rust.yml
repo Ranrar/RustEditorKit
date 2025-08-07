@@ -19,54 +19,51 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Linux setup
       - name: Install system dependencies (Linux only)
         if: runner.os == 'Linux'
         run: |
           sudo apt update
-          sudo apt upgrade
-          sudo apt install -y libgtk-4-dev libcairo2-dev libpango1.0-dev libglib2.0-dev pkg-config
+          sudo apt install -y pkg-config libgtk-4-dev libcairo2-dev libpango1.0-dev libglib2.0-dev
 
+      # macOS setup
       - name: Install system dependencies (macOS only)
         if: runner.os == 'macOS'
         run: |
           brew update
           brew install pkg-config glib cairo pango fontconfig freetype harfbuzz gtk4
 
-      - name: Setup MSYS2 and dependencies (Windows only)
+      # Windows setup with MSYS2
+      - name: Setup MSYS2 + GTK4 dependencies (Windows only)
         if: runner.os == 'Windows'
         uses: msys2/setup-msys2@v2
         with:
           msystem: MINGW64
           update: true
           install: |
-            mingw-w64-x86_64-pkg-config
+            mingw-w64-x86_64-pkgconf
             mingw-w64-x86_64-glib2
             mingw-w64-x86_64-gtk4
             mingw-w64-x86_64-cairo
             mingw-w64-x86_64-pango
-            mingw-w64-x86_64-gdk-pixbuf2
-            mingw-w64-x86_64-icu
-            mingw-w64-x86_64-gobject-introspection
+        shell: bash
 
       - name: Add MSYS2 to PATH (Windows only)
         if: runner.os == 'Windows'
         run: echo "C:\\msys64\\mingw64\\bin" >> $GITHUB_PATH
 
-      - name: Cache cargo registry and build
+      # Caching
+      - name: Cache cargo registry/build
         uses: actions/cache@v4
         with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
+          path: ~/.cargo/registry
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-
+          restore-keys: ${{ runner.os }}-cargo-
 
-      - name: Set up Rust toolchain
+      - name: Setup Rust
         run: rustup toolchain install stable --profile minimal
 
-      - name: Build and test workspace
+      - name: Build & test
         run: |
           cargo build --workspace --verbose
           cargo test --workspace --verbose
