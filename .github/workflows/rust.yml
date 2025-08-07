@@ -42,6 +42,20 @@ jobs:
           Invoke-WebRequest -UserAgent "Wget" -Uri https://downloads.sourceforge.net/project/pkgconfiglite/0.28-1/pkg-config-lite-0.28-1_bin-win32.zip -OutFile pkg_config_lite.zip -MaximumRetryCount 5
           Expand-Archive pkg_config_lite.zip -DestinationPath C:\
           echo "C:\pkg-config-lite-0.28-1\bin" >> $GITHUB_PATH
+      - name: Verify pkg-config.exe exists (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          if (!(Test-Path "C:\pkg-config-lite-0.28-1\bin\pkg-config.exe")) {
+            Write-Error "pkg-config.exe not found after extraction!"
+            exit 1
+          } else {
+            Write-Host "pkg-config.exe found."
+          }
+      - name: Print PATH and pkg-config version (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          Write-Host "PATH: $env:PATH"
+          & "C:\pkg-config-lite-0.28-1\bin\pkg-config.exe" --version
 
       - name: Add GTK4 binaries to PATH (Windows)
         if: runner.os == 'Windows'
