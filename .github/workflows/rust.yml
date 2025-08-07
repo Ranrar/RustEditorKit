@@ -62,6 +62,13 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-
 
+      # Install Rust in MSYS2 (Windows)
+      - name: Install Rust in MSYS2 (Windows)
+        if: runner.os == 'Windows'
+        shell: msys2 {0}
+        run: |
+          pacman -S --noconfirm mingw-w64-x86_64-rust
+
       # Install Rust toolchain (Windows)
       - name: Setup Rust (Windows)
         if: runner.os == 'Windows'
