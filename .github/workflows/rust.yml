@@ -46,7 +46,7 @@ jobs:
             mingw-w64-x86_64-gtk4
             mingw-w64-x86_64-cairo
             mingw-w64-x86_64-pango
-        shell: bash
+          shell: msys2 {0}
 
       - name: Add MSYS2 to PATH (Windows only)
         if: runner.os == 'Windows'
