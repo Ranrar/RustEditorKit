@@ -12,6 +12,7 @@ pub mod input;
 pub mod focus;
 pub mod config;
 pub mod signals;
+pub mod pointer;
 
 // Re-export the main EditorWidget for convenience
 pub use editor::EditorWidget;
