@@ -189,8 +189,13 @@ impl EditorWidget {
             let line_text = buf.lines.get(row).cloned().unwrap_or_default();
             pango_layout.set_text(&line_text);
             // Use unified y-offsets from corelogic/layout.rs
-            let y_offsets = buf.line_y_offsets(layout.line_height, buf.config.font.font_paragraph_spacing(), layout.top_offset);
+            let mut y_offsets = buf.line_y_offsets(layout.line_height, buf.config.font.font_paragraph_spacing(), layout.top_offset);
+            let scroll_px = (buf.scroll_offset as f64) * layout.line_height;
+            for y in &mut y_offsets { *y -= scroll_px; }
             let y_line = y_offsets.get(row).copied().unwrap_or(layout.top_offset);
+            // Apply same tab stops for the cursor's layout
+            let tabs = layout.build_tab_array(&buf.config);
+            pango_layout.set_tabs(Some(&tabs));
             crate::render::cursor::render_cursor_layer(&buf, ctx, &pango_layout, &layout, y_line);
 
             // Cache metrics for event handlers

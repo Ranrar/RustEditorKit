@@ -63,6 +63,8 @@ pub struct EditorBuffer {
     pub cursor_state: crate::corelogic::cursor::CursorState,
     /// Mouse interaction state for selection
     pub mouse_state: MouseState,
+    /// Desired visual X position for vertical cursor movement (in pixels)
+    pub desired_x: Option<f64>,
 }
 
 impl EditorBuffer {
@@ -205,6 +207,7 @@ impl EditorBuffer {
             debug_mode: false,
             redraw_callback: None,
             mouse_state: MouseState::default(),
+            desired_x: None,
         }
     }
 

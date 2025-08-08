@@ -201,9 +201,11 @@ pub fn render_gutter(
     // Calculate gutter line height from font metrics using the same Pango context as rendering
     // (gutter_line_height is now measured in render_editor and maxed with editor font height)
 
+    // Use unified y-offsets for perfect alignment with text lines and apply scroll
+    let mut y_offsets = rkit.line_y_offsets(global_line_height, rkit.config.font.font_paragraph_spacing(), top_offset);
+    let scroll_px = (rkit.scroll_offset as f64) * global_line_height;
+    for y in &mut y_offsets { *y -= scroll_px; }
     for i in 0..line_count {
-        // Use unified y-offsets for perfect alignment with text lines
-        let y_offsets = rkit.line_y_offsets(global_line_height, rkit.config.font.font_paragraph_spacing(), top_offset);
         let y = y_offsets.get(i).copied().unwrap_or(top_offset);
         // ...highlight is now drawn in render/highlight.rs...
         // Line number color

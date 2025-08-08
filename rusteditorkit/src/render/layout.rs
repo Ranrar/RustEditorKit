@@ -71,4 +71,21 @@ impl LayoutMetrics {
             top_offset,
         }
     }
+
+    /// Build a TabArray using the configured tab width in spaces and the average glyph width.
+    /// Aligns tab stops every N spaces starting at x=0 in pixels.
+    pub fn build_tab_array(&self, cfg: &crate::config::configuration::EditorConfig) -> pango::TabArray {
+        let spaces = cfg.tab_width_spaces.max(1);
+        let tab_px = self.text_metrics.average_char_width * spaces as f64;
+        // Create, then set a sequence of tab stops up to a reasonable count.
+        // Pango treats beyond-last tabs by repeating last interval if using aligned char, but for Left tabs we add many.
+        let count = 64; // plenty for typical lines; Pango handles excess gracefully.
+        // positions_in_pixels=false -> locations are in Pango units (multiply by SCALE)
+        let mut tabs = pango::TabArray::new(count, false);
+        for i in 0..count {
+            let pos = ((i as f64 + 1.0) * tab_px) * pango::SCALE as f64;
+            tabs.set_tab(i as i32, pango::TabAlign::Left, pos as i32);
+        }
+        tabs
+    }
 }

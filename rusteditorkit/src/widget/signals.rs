@@ -3,8 +3,10 @@
 
 use gtk4::prelude::*;
 use gtk4::glib::translate::IntoGlib;
+use gtk4::gdk::ModifierType;
 use crate::widget::focus::FocusManager;
 use crate::widget::editor::EditorWidget;
+use crate::widget::input::InputHandler;
 
 impl EditorWidget {
     /// Connect all signals for the editor widget
@@ -19,24 +21,43 @@ impl EditorWidget {
         self.connect_mouse_signals();
         
         // Connect key event handler using unified keybind system
-        let buffer_clone = self.buffer().clone();
-        let keymap_clone = self.keymap.clone();
-        let key_controller = gtk4::EventControllerKey::new();
-        key_controller.connect_key_pressed(move |_controller, keyval, _keycode, state| {
-            // Convert GTK key event to KeyCombo for mapping
+    let buffer_clone = self.buffer().clone();
+    let keymap_clone = self.keymap.clone();
+    let cached_metrics_rc = self.cached_metrics.clone();
+    let cached_pango_ctx_rc = self.cached_pango_ctx.clone();
+    let key_controller = gtk4::EventControllerKey::new();
+    key_controller.connect_key_pressed(move |_controller, keyval, _keycode, state| {
+            // First: prioritize arrow keys (with Shift for selection) using visual, bidi-aware movement
+            use gtk4::gdk::Key;
+            if matches!(keyval, Key::Left | Key::Right | Key::Up | Key::Down) {
+                if let (Some(metrics), Some(pango_ctx)) = (
+                    cached_metrics_rc.borrow().clone(),
+                    cached_pango_ctx_rc.borrow().clone(),
+                ) {
+                    let shift = state.contains(ModifierType::SHIFT_MASK);
+                    let mut buf = buffer_clone.borrow_mut();
+                    match (keyval, shift) {
+                        (Key::Left, false) => InputHandler::move_cursor_left(&mut buf, &metrics.layout, &pango_ctx),
+                        (Key::Right, false) => InputHandler::move_cursor_right(&mut buf, &metrics.layout, &pango_ctx),
+                        (Key::Up, false) => InputHandler::move_cursor_up(&mut buf, &metrics.layout, &pango_ctx),
+                        (Key::Down, false) => InputHandler::move_cursor_down(&mut buf, &metrics.layout, &pango_ctx),
+                        (Key::Left, true) => InputHandler::select_left(&mut buf, &metrics.layout, &pango_ctx),
+                        (Key::Right, true) => InputHandler::select_right(&mut buf, &metrics.layout, &pango_ctx),
+                        (Key::Up, true) => InputHandler::select_up(&mut buf, &metrics.layout, &pango_ctx),
+                        (Key::Down, true) => InputHandler::select_down(&mut buf, &metrics.layout, &pango_ctx),
+                        _ => {}
+                    }
+                    return glib::Propagation::Stop;
+                }
+            }
+
+            // Next: Convert to KeyCombo and try keymap-based actions for everything else
             let keyval_u32: u32 = keyval.into_glib();
             let combo = crate::keybinds::KeyCombo::from_gtk_event(keyval_u32, state);
-            
-            // Debug output for key events
             println!("[KEYBIND DEBUG] Key event: {:?}", combo);
-            
-            // Find matching action in keymap
             if let Some((&action, _)) = keymap_clone.iter().find(|(_, kc)| **kc == combo) {
                 println!("[KEYBIND DEBUG] Dispatched action: {:?}", action);
-                
-                // Special handling for clipboard operations that require async access
                 if action == crate::keybinds::EditorAction::PasteClipboard {
-                    // Handle paste operation with proper async clipboard access
                     let buffer_for_paste = buffer_clone.clone();
                     if let Some(display) = gtk4::gdk::Display::default() {
                         let clipboard = display.clipboard();
@@ -58,23 +79,21 @@ impl EditorWidget {
                     }
                     return glib::Propagation::Stop;
                 } else {
-                    // Handle other keybind actions via dispatcher
                     let mut buf = buffer_clone.borrow_mut();
                     buf.handle_editor_action(action);
                     return glib::Propagation::Stop;
                 }
             }
-            
+
             // Fallback: handle regular character input for typing
             if let Some(text_char) = keyval.to_unicode() {
-                // Only handle printable characters and basic whitespace
                 if text_char.is_ascii_graphic() || text_char == ' ' || text_char == '\t' {
                     let mut buf = buffer_clone.borrow_mut();
                     buf.handle_text_input(&text_char.to_string());
                     return glib::Propagation::Stop;
                 }
             }
-            
+
             glib::Propagation::Proceed
         });
         self.drawing_area.add_controller(key_controller);
@@ -140,6 +159,18 @@ impl EditorWidget {
         // Try to find matching action in keymap
         if let Some((&action, _)) = self.keymap.iter().find(|(_, kc)| **kc == combo) {
             buf.handle_editor_action(action);
+        } else if matches!(keyval, gtk4::gdk::Key::Left | gtk4::gdk::Key::Right | gtk4::gdk::Key::Up | gtk4::gdk::Key::Down) {
+            let metrics_opt = self.cached_metrics.borrow().clone();
+            let pango_ctx_opt = self.cached_pango_ctx.borrow().clone();
+            if let (Some(metrics), Some(pango_ctx)) = (metrics_opt, pango_ctx_opt) {
+                match keyval {
+                    gtk4::gdk::Key::Left => InputHandler::move_cursor_left(&mut buf, &metrics.layout, &pango_ctx),
+                    gtk4::gdk::Key::Right => InputHandler::move_cursor_right(&mut buf, &metrics.layout, &pango_ctx),
+                    gtk4::gdk::Key::Up => InputHandler::move_cursor_up(&mut buf, &metrics.layout, &pango_ctx),
+                    gtk4::gdk::Key::Down => InputHandler::move_cursor_down(&mut buf, &metrics.layout, &pango_ctx),
+                    _ => {}
+                }
+            }
         } else if let Some(text_char) = keyval.to_unicode() {
             // Fallback for character input
             if text_char.is_ascii_graphic() || text_char.is_whitespace() {

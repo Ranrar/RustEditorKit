@@ -31,14 +31,16 @@ use crate::corelogic::gutter::parse_color;
 
 /// Renders the selection layer (background and text color) for selected text.
 /// Only draws if selection_toggle is true and a selection exists.
-pub fn render_selection_layer(buf: &EditorBuffer, ctx: &Context, layout: &LayoutMetrics, width: i32) {
+pub fn render_selection_layer(buf: &EditorBuffer, ctx: &Context, layout: &LayoutMetrics, _width: i32) {
 	let sel_cfg = &buf.config.selection;
 	if !sel_cfg.selection_toggle || buf.selection.is_none() {
 		return;
 	}
 	let selection = buf.selection.as_ref().unwrap();
 	let line_height = layout.line_height;
-	let y_offsets = buf.line_y_offsets(line_height, buf.config.font.font_paragraph_spacing(), layout.top_offset);
+	let mut y_offsets = buf.line_y_offsets(line_height, buf.config.font.font_paragraph_spacing(), layout.top_offset);
+	let scroll_px = (buf.scroll_offset as f64) * layout.line_height;
+	for y in &mut y_offsets { *y -= scroll_px; }
 	let (bg_r, bg_g, bg_b, _) = parse_color(&sel_cfg.selection_bg_color);
 	let opacity = sel_cfg.selection_opacity as f64;
 
@@ -54,10 +56,14 @@ pub fn render_selection_layer(buf: &EditorBuffer, ctx: &Context, layout: &Layout
 		if sel_start >= sel_end || sel_end > line_len { continue; }
 
 		// Calculate x positions using Pango layout
-		let pango_layout = pangocairo::functions::create_layout(ctx);
+	let pango_layout = pangocairo::functions::create_layout(ctx);
 		pango_layout.set_text(line);
 		pango_layout.set_font_description(Some(&layout.text_metrics.font_desc));
-		pango_layout.set_height((layout.line_height * gtk4::pango::SCALE as f64) as i32);
+	pango_layout.set_height((layout.line_height * gtk4::pango::SCALE as f64) as i32);
+	pango_layout.set_spacing(buf.config.font.font_character_spacing() as i32);
+	// Ensure same tab stops as text rendering
+	let tabs = layout.build_tab_array(&buf.config);
+	pango_layout.set_tabs(Some(&tabs));
 		let start_x = layout.text_left_offset + pango_layout.index_to_pos(sel_start as i32).x() as f64 / gtk4::pango::SCALE as f64;
 		let end_x = layout.text_left_offset + pango_layout.index_to_pos(sel_end as i32).x() as f64 / gtk4::pango::SCALE as f64;
 

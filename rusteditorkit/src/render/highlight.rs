@@ -17,7 +17,9 @@ pub fn render_highlight_layer(buf: &EditorBuffer, ctx: &Context, layout: &Layout
     let line_height = layout.line_height;
     let row = buf.cursor.row.min(buf.lines.len().saturating_sub(1));
     // Use unified y-offsets for perfect alignment
-    let y_offsets = buf.line_y_offsets(line_height, buf.config.font.font_paragraph_spacing(), layout.top_offset);
+    let mut y_offsets = buf.line_y_offsets(line_height, buf.config.font.font_paragraph_spacing(), layout.top_offset);
+    let scroll_px = (buf.scroll_offset as f64) * layout.line_height;
+    for y in &mut y_offsets { *y -= scroll_px; }
     let y_line = y_offsets.get(row).copied().unwrap_or(layout.top_offset);
     let y_baseline = y_line + layout.text_metrics.baseline_offset;
     if gutter_config.active_line.highlight_toggle {

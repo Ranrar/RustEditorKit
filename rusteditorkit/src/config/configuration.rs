@@ -4,6 +4,7 @@ use crate::corelogic::font::FontConfig;
 
 /// Configuration for text selection appearance
 #[derive(Debug, Deserialize, Clone)]
+#[serde(default)]
 pub struct SelectionConfig {
     pub selection_toggle: bool,
     pub selection_bg_color: String,
@@ -26,12 +27,15 @@ impl Default for SelectionConfig {
 use crate::corelogic::cursor::CursorConfig;
 
 #[derive(Debug, Deserialize, Clone)]
+#[serde(default)]
 pub struct EditorConfig {
     pub font: FontConfig,
     pub cursor: CursorConfig,
     pub editor_bg_color: String,
     pub gutter: GutterConfig,
     pub selection: SelectionConfig,
+    /// Number of spaces that a tab represents (used to compute tab stops)
+    pub tab_width_spaces: u32,
 
     // Search and whitespace guides
     pub search_match_color: String,
@@ -95,6 +99,7 @@ impl Default for EditorConfig {
                 },
             },
             selection: SelectionConfig::default(),
+            tab_width_spaces: 4,
 
             // Search and whitespace guides
             search_match_color: "#ffff99".to_string(),
@@ -135,6 +140,8 @@ impl EditorConfig {
     pub fn auto_indent_enabled(&self) -> bool { self.auto_indent_enabled }
     pub fn set_comment_enabled(&mut self, v: bool) { self.comment_enabled = v; }
     pub fn comment_enabled(&self) -> bool { self.comment_enabled }
+    pub fn set_tab_width_spaces(&mut self, v: u32) { self.tab_width_spaces = v; }
+    pub fn tab_width_spaces(&self) -> u32 { self.tab_width_spaces }
     pub fn set_margin_left(&mut self, v: f64) { self.margin_left = v; }
     pub fn margin_left(&self) -> f64 { self.margin_left }
     pub fn set_margin_right(&mut self, v: f64) { self.margin_right = v; }

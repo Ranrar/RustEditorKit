@@ -29,23 +29,26 @@ pub fn screen_to_buffer_position(
     let line_height = layout.line_height;
     let left_margin = layout.text_left_offset;
     let top_margin = layout.top_offset;
-    // ...moved logic from editing.rs...
+    // Compute shared y offsets and apply scroll offset to map viewport y to logical row
+    let mut y_offsets = buffer.line_y_offsets(line_height, buffer.config.font.font_paragraph_spacing(), top_margin);
+    let scroll_px = (buffer.scroll_offset as f64) * line_height;
+    for vy in &mut y_offsets { *vy -= scroll_px; }
+    // Find row by comparing against y_offsets intervals [y_offset, y_offset+line_height)
     let mut row = 0;
     let mut found = false;
-    for i in 0..buffer.lines.len() {
-        let line_top = top_margin + line_height * i as f64;
-        let line_bottom = line_top + line_height;
-        if y >= line_top && y < line_bottom {
+    for (i, &y_top) in y_offsets.iter().enumerate() {
+        if y >= y_top && y < y_top + line_height {
             row = i;
             found = true;
             break;
         }
     }
     if !found {
+        // Choose nearest row center
         let mut nearest_row = 0;
         let mut min_dist = f64::MAX;
-        for i in 0..buffer.lines.len() {
-            let center = top_margin + line_height * i as f64 + line_height / 2.0;
+        for (i, &y_top) in y_offsets.iter().enumerate() {
+            let center = y_top + line_height / 2.0;
             let dist = (y - center).abs();
             if dist < min_dist {
                 min_dist = dist;
@@ -58,15 +61,43 @@ pub fn screen_to_buffer_position(
     let pango_layout = gtk4::pango::Layout::new(pango_ctx);
     pango_layout.set_text(line);
     pango_layout.set_font_description(Some(font_desc));
+    // Match render settings
+    pango_layout.set_spacing(buffer.config.font.font_character_spacing() as i32);
+    pango_layout.set_height((layout.line_height * gtk4::pango::SCALE as f64) as i32);
+    let ctx = pango_layout.context();
+    ctx.set_round_glyph_positions(true);
+    // Apply same tab stops as rendering for correct hit-testing across tabs
+    let tabs = layout.build_tab_array(&buffer.config);
+    pango_layout.set_tabs(Some(&tabs));
     const PANGO_SCALE: f64 = 1024.0;
     let x_pango = ((x - left_margin) * PANGO_SCALE) as i32;
-    let (success, byte_index, _trailing) = pango_layout.xy_to_index(x_pango, 0);
+    let (success, byte_index, trailing) = pango_layout.xy_to_index(x_pango, 0);
     let byte_index = if success { byte_index } else { 0 };
     // Clamp byte_index to valid range
     let byte_index_usize = byte_index.min(line.len() as i32).max(0) as usize;
-    // Find the character index corresponding to the byte index
-    let col = line.char_indices().enumerate().find_map(|(i, (b, _))| if b == byte_index_usize { Some(i) } else { None })
-        .unwrap_or_else(|| line.chars().count());
+    // Find the character index corresponding to the byte index, then apply trailing
+    let mut col = 0usize;
+    let mut found_b = false;
+    for (i, (b, _ch)) in line.char_indices().enumerate() {
+        if b == byte_index_usize {
+            col = i;
+            found_b = true;
+            break;
+        }
+        if b > byte_index_usize {
+            col = i; // byte index lies between chars; snap to this char
+            found_b = true;
+            break;
+        }
+        col = i; // will end up last char if no break
+    }
+    if !found_b {
+        // If we didn't find a matching/in-between byte, set to end
+        col = line.chars().count();
+    }
+    if trailing > 0 {
+        col = (col + 1).min(line.chars().count());
+    }
     // Clamp row and col to valid buffer bounds
     let row = row.min(buffer.lines.len().saturating_sub(1));
     let col = col.min(line.chars().count());
@@ -109,31 +140,7 @@ pub fn handle_mouse_drag(
     pango_ctx: &Context,
     font_desc: &FontDescription,
 ) {
-    let line_height = layout.line_height;
-    let top_margin = layout.top_offset;
-    let mut snapped_y = y;
-    let mut found = false;
-    for i in 0..buffer.lines.len() {
-        let line_top = top_margin + line_height * i as f64;
-        let line_bottom = line_top + line_height;
-        if y >= line_top && y < line_bottom {
-            snapped_y = line_top;
-            found = true;
-            break;
-        }
-    }
-    if !found {
-        let mut min_dist = f64::MAX;
-        for i in 0..buffer.lines.len() {
-            let line_top = top_margin + line_height * i as f64;
-            let dist = (y - line_top).abs();
-            if dist < min_dist {
-                min_dist = dist;
-                snapped_y = line_top;
-            }
-        }
-    }
-    let (row, col) = screen_to_buffer_position(buffer, x, snapped_y, layout, pango_ctx, font_desc);
+    let (row, col) = screen_to_buffer_position(buffer, x, y, layout, pango_ctx, font_desc);
     match buffer.mouse_state {
         MouseState::Selecting { start_row, start_col } => {
             let mut sel = crate::corelogic::selection::Selection::new(start_row, start_col);
