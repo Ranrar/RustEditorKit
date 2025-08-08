@@ -4,7 +4,7 @@
 use serde::Deserialize;
 use gtk4::cairo::Context;
 use gtk4::pango;
-use crate::core::EditorBuffer;
+use crate::corelogic::buffer::EditorBuffer;
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct GutterConfig {

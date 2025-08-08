@@ -3,20 +3,16 @@
 
 // Core logic modules (centralized)
 pub mod corelogic;
+pub mod utilits;
 
 // UI and platform modules
 pub mod keybinds;
-pub mod crossplatform;
+pub use utilits::crossplatform;
 
 pub mod widget;
 pub mod imcontext;
-pub mod ui; // UI scheduler helpers (GLib main loop)
+pub use utilits::ui; // UI scheduler helpers (GLib main loop)
 
-// Legacy modules (will be deprecated)
-pub mod core; // Legacy core, will be removed
-pub mod multicursor; // Will be merged into corelogic
-pub mod bracket; // Will be merged into corelogic
-pub mod indent; // Will be merged into corelogic
 
 pub mod config {
     pub mod configuration;
