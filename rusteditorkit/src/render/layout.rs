@@ -3,6 +3,15 @@ use gtk4::cairo::Context;
 use gtk4::pango;
 use crate::corelogic::EditorBuffer;
 
+/// Stores metrics for a specific line including its position and height
+#[derive(Debug, Clone)]
+pub struct LineMetrics {
+    /// Y-coordinate of the top of the line
+    pub y_top: f64,
+    /// Height of this particular line
+    pub height: f64,
+}
+
 #[derive(Debug, Clone)]
 pub struct FontMetrics {
     pub font_desc: pango::FontDescription,
@@ -19,6 +28,8 @@ pub struct LayoutMetrics {
     pub gutter_metrics: FontMetrics,
     pub text_left_offset: f64,
     pub top_offset: f64,
+    /// Per-line metrics for variable-height lines
+    pub line_metrics: Vec<LineMetrics>,
 }
 
 impl FontMetrics {
@@ -63,12 +74,28 @@ impl LayoutMetrics {
             rkit.config.margin_left
         };
         let top_offset = rkit.config.margin_top;
+        
+        // Initialize line_metrics with default values
+        // These will be updated by the text renderer when measuring actual lines
+        let mut line_metrics = Vec::with_capacity(rkit.lines.len());
+        let paragraph_spacing = font_cfg.font_paragraph_spacing();
+        let mut y = top_offset;
+        
+        for _ in 0..rkit.lines.len() {
+            line_metrics.push(LineMetrics {
+                y_top: y,
+                height: line_height,
+            });
+            y += line_height + paragraph_spacing;
+        }
+        
         Self {
             line_height,
             text_metrics,
             gutter_metrics,
             text_left_offset,
             top_offset,
+            line_metrics,
         }
     }
 

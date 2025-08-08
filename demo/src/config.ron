@@ -29,11 +29,11 @@
     cursor: (
         cursor_color: "#000000ff",    //working
         cursor_type: "bar",             //working
-        cursor_thickness: 2.0,          //working
+        cursor_thickness: 1.0,          //working
         cursor_padding_x: 0.0,          //working
         cursor_padding_y: 0.0,          //working
         cursor_roundness: 0.0,          //working
-        cursor_blink: false,            //working
+        cursor_blink: true,            //working
         cursor_blink_rate: 700,         //working
         cursor_anti_alias: true,        //working
         cursor_unicode_fallback: true,  //not working
@@ -45,10 +45,10 @@
         toggle: true,                   //working
         ltr_width: 30,                  //working
         padding: 4,                     //not working
-        bg_color: "#b39e9eff",        //working
+        bg_color: "#e6e6f0",        //working
         border: (
             toggle: true,               //working
-            color: "#444",              //working
+            color: "#f0f0fa",              //working
             width: 1,                   //working
             style: "solid",             //working
         ),
@@ -86,7 +86,7 @@
         selection_text_color: "#ffffff",
     ),
     search_match_color: "#ffff99",
-    whitespace_guide_color: "#e0e0e0",    //not implementet
+    whitespace_guide_color: "#ff0000ff",    //not implementet
     show_whitespace_guides: true,          //not implementet
     syntax_highlighting: true,              //not working
     auto_indent_enabled: true,              //not implementet

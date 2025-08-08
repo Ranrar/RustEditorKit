@@ -1,0 +1,25 @@
+# Variable Height Text Test
+
+## Normal Text
+This is a line with normal characters.
+This line is longer but still has normal character heights.
+
+## Emoji Test 😀
+Simple emoji line 🚀 to test height adjustment.
+Multiple emoji: 🌟 ✨ 🌍 🎉 🎊 😎 🏆 💯
+Emoji with ZWJ sequences: 👨‍👩‍👧‍👦 👩‍💻 🏳️‍🌈 
+
+## CJK Characters
+这是一些中文字符，它们可能具有不同的高度。
+日本語のテキストも同様に異なる高さを持つことがあります。
+한국어 텍스트도 다른 높이를 가질 수 있습니다.
+
+## Accented Characters
+Voilà! Café au lait with crème brûlée.
+Āẞ€Çαβπμ∫√∞≈≠≤≥
+
+## Mixed Content Line
+Normal + Emoji 🎯 + CJK 漢字 + Accented Voilà!
+
+## Long Line with Mixed Content
+This is a very long line with mixed content including emoji 🌟, CJK characters 你好, accented characters über, and some normal text that continues far beyond the normal width of the editor to test horizontal scrolling and hit-testing behavior on lines that require scrolling horizontally.

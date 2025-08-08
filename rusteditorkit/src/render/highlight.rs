@@ -14,14 +14,19 @@ use cairo::Context;
 /// * `width` - Total editor width
 pub fn render_highlight_layer(buf: &EditorBuffer, ctx: &Context, layout: &LayoutMetrics, width: i32) {
     let gutter_config = buf.config.gutter();
-    let line_height = layout.line_height;
     let row = buf.cursor.row.min(buf.lines.len().saturating_sub(1));
-    // Use unified y-offsets for perfect alignment
-    let mut y_offsets = buf.line_y_offsets(line_height, buf.config.font.font_paragraph_spacing(), layout.top_offset);
-    let scroll_px = (buf.scroll_offset as f64) * layout.line_height;
-    for y in &mut y_offsets { *y -= scroll_px; }
-    let y_line = y_offsets.get(row).copied().unwrap_or(layout.top_offset);
+    
+    // Skip if the row is beyond our known metrics
+    if row >= layout.line_metrics.len() {
+        return;
+    }
+    
+    // Use line_metrics for variable-height lines
+    let line_metric = &layout.line_metrics[row];
+    let y_line = line_metric.y_top;
     let y_baseline = y_line + layout.text_metrics.baseline_offset;
+    let line_height = line_metric.height;
+    
     if gutter_config.active_line.highlight_toggle {
         let highlight_color = &gutter_config.active_line.highlight_color;
         let (hr, hg, hb, _) = crate::corelogic::gutter::parse_color(highlight_color);

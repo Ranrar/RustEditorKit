@@ -65,6 +65,10 @@ pub struct EditorBuffer {
     pub mouse_state: MouseState,
     /// Desired visual X position for vertical cursor movement (in pixels)
     pub desired_x: Option<f64>,
+    /// Last mouse X position for debugging
+    pub last_mouse_x: f64,
+    /// Last mouse Y position for debugging
+    pub last_mouse_y: f64,
 }
 
 impl EditorBuffer {
@@ -208,6 +212,8 @@ impl EditorBuffer {
             redraw_callback: None,
             mouse_state: MouseState::default(),
             desired_x: None,
+            last_mouse_x: 0.0,
+            last_mouse_y: 0.0,
         }
     }
 
@@ -271,5 +277,34 @@ impl EditorBuffer {
     /// Toggle A4 mode (stubbed for now)
     pub fn toggle_a4_mode(&mut self) {
         println!("[DEBUG] toggle_a4_mode called but not implemented yet");
+    }
+    
+    /// Ensure cursor is visible by scrolling if needed
+    /// This should be called after any cursor movement operation
+    pub fn ensure_cursor_visible(&mut self) {
+        if self.lines.is_empty() {
+            self.scroll_offset = 0;
+            return;
+        }
+        
+        // If cursor is above the current scroll position, scroll up to show it
+        if self.cursor.row < self.scroll_offset {
+            self.scroll_offset = self.cursor.row;
+            println!("[SCROLL DEBUG] Scrolled up to make cursor visible at row {}", self.cursor.row);
+        } 
+        // If cursor is below the current scroll position + visible lines, scroll down
+        // Note: This is an approximation since we don't know the exact number of visible lines
+        // We'll assume about 10 lines are visible at a time
+        else {
+            let estimated_visible_lines = 10; // This should ideally be calculated based on editor height
+            let last_visible_line = self.scroll_offset + estimated_visible_lines;
+            
+            if self.cursor.row >= last_visible_line {
+                // Scroll down to make cursor visible, keeping some context
+                self.scroll_offset = self.cursor.row.saturating_sub(estimated_visible_lines - 2);
+                self.scroll_offset = self.scroll_offset.min(self.lines.len().saturating_sub(1));
+                println!("[SCROLL DEBUG] Scrolled down to make cursor visible at row {}", self.cursor.row);
+            }
+        }
     }
 }

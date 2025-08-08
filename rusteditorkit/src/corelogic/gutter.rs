@@ -166,8 +166,8 @@ pub fn render_gutter(
     gutter_cfg: &GutterConfig,
     line_count: usize,
     active_row: usize,
-    global_line_height: f64,
-    top_offset: f64,
+    _global_line_height: f64,  // Kept for backward compatibility
+    _top_offset: f64,          // Kept for backward compatibility
     layout: &crate::render::layout::LayoutMetrics,
 ) {
     if !gutter_cfg.toggle { return; }
@@ -201,12 +201,15 @@ pub fn render_gutter(
     // Calculate gutter line height from font metrics using the same Pango context as rendering
     // (gutter_line_height is now measured in render_editor and maxed with editor font height)
 
-    // Use unified y-offsets for perfect alignment with text lines and apply scroll
-    let mut y_offsets = rkit.line_y_offsets(global_line_height, rkit.config.font.font_paragraph_spacing(), top_offset);
-    let scroll_px = (rkit.scroll_offset as f64) * global_line_height;
-    for y in &mut y_offsets { *y -= scroll_px; }
+    // Use line_metrics for variable-height lines
     for i in 0..line_count {
-        let y = y_offsets.get(i).copied().unwrap_or(top_offset);
+        // Skip if the line is beyond our known metrics
+        if i >= layout.line_metrics.len() {
+            continue;
+        }
+        
+        let line_metric = &layout.line_metrics[i];
+        let y = line_metric.y_top;
         // ...highlight is now drawn in render/highlight.rs...
         // Line number color
         let color = if i == active_row {

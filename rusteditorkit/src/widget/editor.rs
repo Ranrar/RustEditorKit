@@ -22,6 +22,8 @@ pub struct EditorWidget {
     pub cached_metrics: RefCell<Option<CachedEditorMetrics>>,
     /// Cached Pango context for event handlers
     pub cached_pango_ctx: RefCell<Option<gtk4::pango::Context>>,
+    /// Debug info for mouse position visualization
+    pub mouse_debug_info: RefCell<crate::render::pointer::MouseDebugInfo>,
 }
 
 /// Struct to cache layout metrics and font description
@@ -122,6 +124,7 @@ impl EditorWidget {
             keymap,
             cached_metrics: RefCell::new(None),
             cached_pango_ctx: RefCell::new(None),
+            mouse_debug_info: RefCell::new(crate::render::pointer::MouseDebugInfo::default()),
         };
         widget.update_cursor_config();
         widget.initialize_cache();
@@ -172,12 +175,13 @@ impl EditorWidget {
         let cached_pango_ctx = self.cached_pango_ctx.clone();
         self.drawing_area.set_draw_func(move |_area, ctx, width, height| {
             let buf = buffer.borrow();
-            let layout = LayoutMetrics::calculate(&buf, ctx);
+            let mut layout = LayoutMetrics::calculate(&buf, ctx);
             crate::render::background::render_background_layer(&buf, ctx, width, height);
+            // Text layer must be rendered before other layers as it calculates the line metrics
+            crate::render::text::render_text_layer(&buf, ctx, &mut layout);
             crate::render::gutter::render_gutter_layer(&buf, ctx, &layout, height);
             crate::render::highlight::render_highlight_layer(&buf, ctx, &layout, width);
             crate::render::selection::render_selection_layer(&buf, ctx, &layout, width);
-            crate::render::text::render_text_layer(&buf, ctx, &layout);
 
             // Cursor rendering
             let font_cfg = &buf.config.font;
@@ -190,8 +194,14 @@ impl EditorWidget {
             pango_layout.set_text(&line_text);
             // Use unified y-offsets from corelogic/layout.rs
             let mut y_offsets = buf.line_y_offsets(layout.line_height, buf.config.font.font_paragraph_spacing(), layout.top_offset);
-            let scroll_px = (buf.scroll_offset as f64) * layout.line_height;
-            for y in &mut y_offsets { *y -= scroll_px; }
+            // Anchor scroll to cumulative offsets
+            let scroll_line = buf.scroll_offset.min(y_offsets.len());
+            let scroll_anchor = if scroll_line < y_offsets.len() {
+                y_offsets[scroll_line] - layout.top_offset
+            } else {
+                y_offsets.last().copied().unwrap_or(layout.top_offset) - layout.top_offset
+            };
+            for y in &mut y_offsets { *y -= scroll_anchor; }
             let y_line = y_offsets.get(row).copied().unwrap_or(layout.top_offset);
             // Apply same tab stops for the cursor's layout
             let tabs = layout.build_tab_array(&buf.config);
@@ -207,6 +217,8 @@ impl EditorWidget {
             // Cache Pango context for event handlers
             let pango_ctx = pango_layout.context().clone();
             *cached_pango_ctx.borrow_mut() = Some(pango_ctx);
+            
+            // We'll draw mouse position marker by adding it in the render system
         });
     }
 

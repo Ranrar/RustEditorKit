@@ -4,12 +4,13 @@ use crate::corelogic::buffer::EditorBuffer;
 
 /// Main rendering entry point with layered architecture
 pub fn render_editor(rkit: &EditorBuffer, ctx: &Context, width: i32, height: i32) {
-    let layout = LayoutMetrics::calculate(rkit, ctx);
+    let mut layout = LayoutMetrics::calculate(rkit, ctx);
     background::render_background_layer(rkit, ctx, width, height);
+    // Text layer must be rendered before other layers as it calculates the line metrics
+    text::render_text_layer(rkit, ctx, &mut layout);
     gutter::render_gutter_layer(rkit, ctx, &layout, height);
     highlight::render_highlight_layer(rkit, ctx, &layout, width);
     selection::render_selection_layer(rkit, ctx, &layout, width);
-    text::render_text_layer(rkit, ctx, &layout);
 }
 
 pub mod background;
@@ -22,6 +23,7 @@ pub mod cache;
 pub mod invalidate;
 pub mod highlight;
 pub mod selection;
+pub mod pointer;
 
 // Publicly re-export main types and entry points
 pub use background::render_background_layer;

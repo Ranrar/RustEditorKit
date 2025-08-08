@@ -59,21 +59,27 @@ fn main() {
         editor.connect_signals();
         editor.load_config_from_file("demo/src/config.ron");
         
-        // Add some sample text
+        // Load our test file with variable-height content
         {
             let buffer = editor.buffer();
             let mut buf = buffer.borrow_mut();
-            buf.lines = vec![
-                "// RustEditorKit Demo".to_string(),
-                "fn main() {".to_string(),
-                "    println!(\"Hello, world!\");".to_string(),
-                "}".to_string(),
-                "".to_string(),
-                "// Multi-language support:".to_string(),
-                "// Emoji: 😀 😁 😂 🤔".to_string(),
-                "// Chinese/Japanese: 漢字 かな カタカナ".to_string(),
-                "// Accents: é ü ñ å".to_string(),
-            ];
+            // Try to load test_text.txt first, fall back to sample text if it fails
+            if let Err(_) = buf.open_file("test_text.txt") {
+                println!("[DEBUG] Failed to load test_text.txt, using default sample text");
+                buf.lines = vec![
+                    "// RustEditorKit Demo".to_string(),
+                    "fn main() {".to_string(),
+                    "    println!(\"Hello, world!\");".to_string(),
+                    "}".to_string(),
+                    "".to_string(),
+                    "// Multi-language support:".to_string(),
+                    "// Emoji: 😀 😁 😂 🤔".to_string(),
+                    "// Chinese/Japanese: 漢字 かな カタカナ".to_string(),
+                    "// Accents: é ü ñ å".to_string(),
+                ];
+            } else {
+                println!("[DEBUG] Successfully loaded test_text.txt");
+            }
         }
         
         // Create menu

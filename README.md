@@ -6,8 +6,6 @@ A modern, customizable text editor engine for Rust applications using GTK4. Buil
 
 ## Features
 
-- **Multi-cursor editing** with full selection support
-- **Customizable themes** and syntax highlighting
 - **Search & replace** with pattern matching
 - **Undo/redo** with complete state management
 - **Line numbers, gutters** and visual aids
@@ -19,7 +17,6 @@ A modern, customizable text editor engine for Rust applications using GTK4. Buil
 Perfect for:
 - Building Rust desktop applications with GTK4
 - Replacing GtkSourceView in existing projects
-- Creating custom code editors and IDEs
 - Educational projects learning text editor architecture
 
 ## Quick Start
@@ -63,10 +60,8 @@ window.set_child(Some(editor.widget()));
 - Help with cross-platform compatibility
 
 **Current priority areas:**
-- Clipboard operations and IME support
 - Performance optimization
-- Theme and configuration system
-- Plugin architecture design
+- Plugin architecture design and API
 
 **Project Status:** Alpha - Most core features working, API may change
 
@@ -74,12 +69,3 @@ window.set_child(Some(editor.widget()));
 - Mouse selection are not visually working as expected.
 - Arrow key navigation has issues with multi-byte UTF-8 sequences.
 - Scrollbar is not working (it hasn’t been implemented yet).
-
-## Threading invariants
-
-- GTK/GDK/Pango are not thread-safe. Initialize and use widgets only on the main thread.
-- Use GLib to schedule UI work:
-	- rusteditorkit::ui::ui_invoke to post a one-off closure to the main loop.
-	- rusteditorkit::ui::ui_spawn to run futures on the GLib main context.
-	- rusteditorkit::ui::ui_channel to communicate from background threads; deliver on the main loop via rusteditorkit::ui::ui_attach(receiver, handler).
-- Share non-UI data across threads with Arc<Mutex<_>> or message passing. Keep UI state as Rc<RefCell<_>> on the main thread with Weak back-references to avoid cycles.

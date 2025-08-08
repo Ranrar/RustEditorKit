@@ -8,6 +8,51 @@ use crate::widget::editor::EditorWidget;
 impl EditorWidget {
 	/// Connect mouse event handlers for selection support
 	pub fn connect_mouse_signals(&self) {
+		// Create a tracking controller to follow mouse position for debugging
+		let mouse_motion = gtk4::EventControllerMotion::new();
+		let buffer_motion = self.buffer().clone();
+		mouse_motion.connect_motion(move |_, x, y| {
+			// Update debug info in the buffer
+			let mut buf = buffer_motion.borrow_mut();
+			buf.last_mouse_x = x;
+			buf.last_mouse_y = y;
+			// Don't trigger redraws on motion - would be too intensive
+		});
+		self.drawing_area.add_controller(mouse_motion);
+        
+        // Add scroll wheel controller
+        let scroll_controller = gtk4::EventControllerScroll::new(gtk4::EventControllerScrollFlags::VERTICAL);
+        let buffer_scroll = self.buffer().clone();
+        scroll_controller.connect_scroll(move |_, _dx, dy| {
+            let mut buf = buffer_scroll.borrow_mut();
+            
+            // Calculate scroll direction and amount
+            let scroll_dir = if dy > 0.0 { 1 } else { -1 };
+            let scroll_amount = (dy.abs().ceil() as usize).max(1);
+            
+            // Update scroll offset
+            if scroll_dir > 0 {
+                // Scroll down: increase offset
+                buf.scroll_offset = buf.scroll_offset.saturating_add(scroll_amount);
+            } else {
+                // Scroll up: decrease offset
+                buf.scroll_offset = buf.scroll_offset.saturating_sub(scroll_amount);
+            }
+            
+            // Limit scroll offset to valid range
+            buf.scroll_offset = buf.scroll_offset.min(buf.lines.len().saturating_sub(1));
+            
+            println!("[SCROLL DEBUG] Scrolled {} lines, new offset: {}", 
+                   if scroll_dir > 0 { format!("+{}", scroll_amount) } else { format!("-{}", scroll_amount) }, 
+                   buf.scroll_offset);
+            
+            // Request redraw with updated scroll position
+            buf.request_redraw();
+            
+            // Returning false allows the event to propagate
+            gtk4::glib::Propagation::Proceed
+        });
+        self.drawing_area.add_controller(scroll_controller);
 		// Primary mouse button controller (for clicking and dragging)
 		let buffer_primary = self.buffer().clone();
 		let cached_metrics = self.cached_metrics.clone();
@@ -24,17 +69,38 @@ impl EditorWidget {
 			let shift_held = state.contains(gtk4::gdk::ModifierType::SHIFT_MASK);
 
 			println!("[MOUSE DEBUG] Click at ({:.1}, {:.1}), shift: {}", x, y, shift_held);
+            
+            // We need to access the EditorWidget to update mouse_debug_info
+            // This will be done when we modify the rendering system
 
 			let mut buf = buffer_click.borrow_mut();
 			let metrics_opt = cached_metrics_click.borrow();
 			let pango_ctx_opt = cached_pango_ctx_click.borrow();
 			if let (Some(metrics), Some(pango_ctx)) = (metrics_opt.as_ref(), pango_ctx_opt.as_ref()) {
+				// Calculate line index using global line_height for debugging
+                let top_offset = metrics.layout.top_offset;
+                let line_height = metrics.layout.line_height;
+                let relative_y = y - top_offset;
+                let global_line_index = (relative_y / line_height).floor() as usize;
+                println!("[MOUSE DEBUG] Computed line index (global line_height): {}", global_line_index);
+                
+				// Get the cursor position before the click
+				let old_row = buf.cursor.row;
+				let old_col = buf.cursor.col;
+				
 				buf.handle_mouse_click(
 					x, y, shift_held,
 					&metrics.layout,
 					pango_ctx,
 					&metrics.layout.text_metrics.font_desc
 				);
+                
+                // Print cursor position after placement with before/after comparison
+                println!("[MOUSE DEBUG] Caret moved from ({},{}) to ({},{})", 
+                         old_row, old_col, buf.cursor.row, buf.cursor.col);
+                println!("[MOUSE DEBUG] Expected line: {}, Actual line: {}", 
+                         global_line_index, buf.cursor.row);
+                
 				buf.request_redraw();
 			} else {
 				println!("[ERROR] Mouse event: metrics or pango context cache missing. Mouse event ignored.");

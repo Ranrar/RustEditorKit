@@ -38,9 +38,8 @@ impl InputHandler {
         layout.set_font_description(Some(&font_desc));
         let text = buf.lines.get(row).cloned().unwrap_or_default();
         layout.set_text(&text);
-        // Match rendering config
-        layout.set_spacing(buf.config.font.font_character_spacing() as i32);
-        layout.set_height((metrics.line_height * pango::SCALE as f64) as i32);
+    // Match rendering config
+    layout.set_spacing(buf.config.font.font_character_spacing() as i32);
         layout.context().set_round_glyph_positions(true);
         let tabs = metrics.build_tab_array(&buf.config);
         layout.set_tabs(Some(&tabs));
@@ -198,6 +197,8 @@ impl InputHandler {
         buf.cursor.col = col;
         buf.desired_x = Some(desired_x);
         Self::ensure_cursor_valid(buf);
+        // Ensure the cursor stays in view when navigating up
+        buf.ensure_cursor_visible();
         buf.request_redraw();
     }
 
@@ -232,6 +233,8 @@ impl InputHandler {
         buf.cursor.col = col;
         buf.desired_x = Some(desired_x);
         Self::ensure_cursor_valid(buf);
+        // Ensure the cursor stays in view when navigating down
+        buf.ensure_cursor_visible();
         buf.request_redraw();
     }
 
