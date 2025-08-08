@@ -10,6 +10,7 @@ pub mod crossplatform;
 
 pub mod widget;
 pub mod imcontext;
+pub mod ui; // UI scheduler helpers (GLib main loop)
 
 // Legacy modules (will be deprecated)
 pub mod core; // Legacy core, will be removed
