@@ -8,7 +8,7 @@
 //! - `aspect_ratio_dims(width, aspect)`: Calculates height for a given width and aspect ratio
 
 use gtk4::prelude::*;
-use crate::corelogic::size_config::ContainerMode;
+use crate::corelogic::widget_sizing::ContainerMode;
 
 pub fn clamp_dim(val: i32, min: i32, max: i32) -> i32 {
     val.max(min).min(max)

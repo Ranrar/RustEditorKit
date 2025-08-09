@@ -25,9 +25,6 @@
 //! - `AutoFitToParent`: Matches parent size
 //! - `PercentOfParent(wp, hp)`: Percent of parent size
 //! - `ContainerAware(mode)`: Adapts to container type
-//!
-//! # Migration Notes
-//! All legacy calls to set_content_width, set_content_height, set_focusable should be replaced with this API.
 
 #[non_exhaustive]
 pub enum SizeMode {

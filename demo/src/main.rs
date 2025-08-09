@@ -57,6 +57,7 @@ fn main() {
         // Create editor
         let editor = Rc::new(EditorWidget::new());
         editor.connect_signals();
+        editor.connect_keybind_debug(); // Enable keybind debugging
         editor.load_config_from_file("demo/src/config.ron");
         
         // Load our test file with variable-height content
@@ -93,8 +94,9 @@ fn main() {
         vbox.append(&menu_bar);
         vbox.append(editor.widget());
         
-        // Set the editor widget minimum size
-        editor.widget().set_size_request(800, 600);
+    // Set the editor widget minimum size using the new trait-based API
+    use rusteditorkit::corelogic::{SizeMode, ConfigurableSize};
+    editor.widget().configure_size(SizeMode::Minimum(800, 600));
         
         let window = ApplicationWindow::builder()
             .application(app)

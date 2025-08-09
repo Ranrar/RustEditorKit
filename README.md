@@ -8,6 +8,7 @@ A modern, customizable text editor engine for Rust applications using GTK4. Buil
 
 - **Search & replace** with pattern matching
 - **Undo/redo** with complete state management
+- **Internal scrolling system** with configurable policies and smooth scrolling
 - **Line numbers, gutters** and visual aids
 - **Cross-platform** (Linux, Windows, macOS)
 - **Modular design** - use only what you need
@@ -40,6 +41,7 @@ window.set_child(Some(editor.widget()));
 
 - **[API Reference](rusteditorkit/doc/API.md)** - Complete function reference and usage patterns
 - **[Widget Integration](rusteditorkit/doc/EditorWidget.md)** - GTK4 integration guide and configuration
+- **[Scroll System](rusteditorkit/doc/ScrollSystem.md)** - Internal scrolling implementation and configuration
 - **[Roadmap](rusteditorkit/doc/roadmap.md)** - Planned features and milestones
 
 ## Contributing
