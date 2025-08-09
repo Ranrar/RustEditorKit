@@ -17,14 +17,31 @@ pub struct EditorBuffer {
 }
 ```
 
-### `EditorWidget`  
-GTK4 widget that encapsulates an `EditorBuffer` with full rendering, input handling, and event management.
+
+### `ConfigurableSize` Trait & `SizeMode` Enum
+
+Flexible trait-based API for widget sizing and focus management. Use this to configure GTK4 widgets with various sizing strategies.
 
 ```rust
-let editor = EditorWidget::new();
-editor.connect_signals();
-window.set_child(Some(editor.widget()));
+use rusteditorkit::widget::ConfigurableSize;
+use rusteditorkit::corelogic::SizeMode;
+let drawing_area = gtk::DrawingArea::new();
+// Minimum size, expandable
+drawing_area.configure_size(SizeMode::Minimum(400, 300));
+// Switch to aspect ratio mode at runtime
+drawing_area.switch_mode(SizeMode::AspectRatio(16.0/9.0));
 ```
+
+#### SizeMode Variants
+- `Fixed(w, h)`: Exact width/height, no expansion
+- `Minimum(w, h)`: Minimum width/height, expandable
+- `Dynamic`: No constraints, fully expandable
+- `Maximum(w, h)`: Max width/height, clamps on size change
+- `MinMax { min_w, min_h, max_w, max_h }`: Min/max bounds
+- `AspectRatio(ratio)`: Maintains width/height ratio
+- `AutoFitToParent`: Matches parent size
+- `PercentOfParent(wp, hp)`: Percent of parent size
+- `ContainerAware(mode)`: Adapts to container type
 
 ### `Selection`
 Represents text selection with start and end coordinates, supporting both single-line and multi-line selections.

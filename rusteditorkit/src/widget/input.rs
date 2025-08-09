@@ -197,8 +197,6 @@ impl InputHandler {
         buf.cursor.col = col;
         buf.desired_x = Some(desired_x);
         Self::ensure_cursor_valid(buf);
-        // Ensure the cursor stays in view when navigating up
-        buf.ensure_cursor_visible();
         buf.request_redraw();
     }
 
@@ -233,8 +231,6 @@ impl InputHandler {
         buf.cursor.col = col;
         buf.desired_x = Some(desired_x);
         Self::ensure_cursor_valid(buf);
-        // Ensure the cursor stays in view when navigating down
-        buf.ensure_cursor_visible();
         buf.request_redraw();
     }
 

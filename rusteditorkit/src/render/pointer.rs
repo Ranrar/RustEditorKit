@@ -49,3 +49,31 @@ pub fn render_mouse_marker(ctx: &Context, debug_info: &MouseDebugInfo) {
     ctx.set_font_size(9.0);
     let _ = ctx.show_text(&format!("({:.1},{:.1})", x, y));
 }
+
+/// Prints detailed debug info for a mouse click: position, line/word, and line band analysis
+pub fn debug_mouse_click(
+    x: f64,
+    y: f64,
+    row: usize,
+    col: usize,
+    clicked_word: &str,
+    line_metrics: &[crate::render::layout::LineMetrics],
+) {
+    println!("[CURSOR CLICK] Position: ({:.1}, {:.1}), Line: {}, Column: {}, Word: \"{}\"", x, y, row, col, clicked_word);
+    for (i, line_metric) in line_metrics.iter().enumerate() {
+        let band_top = line_metric.y_top;
+        let band_bottom = band_top + line_metric.height;
+        let marker = if i == row { "→" } else { " " };
+        let hit = if y >= band_top && y < band_bottom { "✓" } else { " " };
+        println!("[LINE DEBUG] {}Line {}: y=[{:.1}-{:.1}], height={:.1} {}", marker, i, band_top, band_bottom, line_metric.height, hit);
+    }
+    if row < line_metrics.len() {
+        let band_top = line_metrics[row].y_top;
+        let band_bottom = band_top + line_metrics[row].height;
+        if y >= band_top && y < band_bottom {
+            println!("[LINE DEBUG] Click falls within line {} band ✓", row);
+        } else {
+            println!("[LINE DEBUG] Click does NOT fall within line {} band ✗", row);
+        }
+    }
+}

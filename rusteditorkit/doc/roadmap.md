@@ -1,6 +1,7 @@
 # RustEditorKit Roadmap
 
 ## Core Editing Functionality
+ - [x] Unified sizing API for GTK widgets (trait-based, flexible modes)
 - [x] Multi-cursor editing (local only)
 - [x] Undo/redo stack  
 - [x] Selection logic (select all, multi-selection, start/end)  

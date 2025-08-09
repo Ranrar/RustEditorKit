@@ -26,3 +26,5 @@ pub use search::*;
 pub use fileio::*;
 // pub use layout::*;  // Temporarily disabled
 pub use dispatcher::*;
+pub mod size_config;
+pub use size_config::{ConfigurableSize, SizeMode, ContainerMode};

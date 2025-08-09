@@ -16,3 +16,4 @@ pub mod pointer;
 
 // Re-export the main EditorWidget for convenience
 pub use editor::EditorWidget;
+mod size_config_impl;

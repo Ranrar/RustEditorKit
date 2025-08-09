@@ -92,9 +92,9 @@ impl EditorWidget {
             }));
         }
 
-        drawing_area.set_focusable(true);
-        drawing_area.set_content_width(400);
-        drawing_area.set_content_height(300);
+    // Use new trait-based API for sizing and focus
+    use crate::corelogic::size_config::{ConfigurableSize, SizeMode};
+    drawing_area.configure_size(SizeMode::Minimum(400, 300));
 
         // IMContext integration
         let buffer_clone = buffer.clone();

@@ -69,38 +69,52 @@ impl EditorWidget {
 			let shift_held = state.contains(gtk4::gdk::ModifierType::SHIFT_MASK);
 
 			println!("[MOUSE DEBUG] Click at ({:.1}, {:.1}), shift: {}", x, y, shift_held);
-            
-            // We need to access the EditorWidget to update mouse_debug_info
-            // This will be done when we modify the rendering system
 
 			let mut buf = buffer_click.borrow_mut();
 			let metrics_opt = cached_metrics_click.borrow();
 			let pango_ctx_opt = cached_pango_ctx_click.borrow();
 			if let (Some(metrics), Some(pango_ctx)) = (metrics_opt.as_ref(), pango_ctx_opt.as_ref()) {
-				// Calculate line index using global line_height for debugging
-                let top_offset = metrics.layout.top_offset;
-                let line_height = metrics.layout.line_height;
-                let relative_y = y - top_offset;
-                let global_line_index = (relative_y / line_height).floor() as usize;
-                println!("[MOUSE DEBUG] Computed line index (global line_height): {}", global_line_index);
-                
-				// Get the cursor position before the click
-				let old_row = buf.cursor.row;
-				let old_col = buf.cursor.col;
-				
+				// Calculate buffer position (row, col) from mouse click
+				let (row, col) = crate::corelogic::pointer::screen_to_buffer_position(
+					&buf, x, y, &metrics.layout, pango_ctx, &metrics.layout.text_metrics.font_desc
+				);
+				// Extract clicked word
+				let clicked_word = if row < buf.lines.len() {
+					let line = &buf.lines[row];
+					let chars: Vec<char> = line.chars().collect();
+					if col < chars.len() && chars[col].is_alphanumeric() {
+						let mut start = col;
+						let mut end = col;
+						while start > 0 && (chars[start - 1].is_alphanumeric() || chars[start - 1] == '_') {
+							start -= 1;
+						}
+						while end < chars.len() && (chars[end].is_alphanumeric() || chars[end] == '_') {
+							end += 1;
+						}
+						line[start..end].to_string()
+					} else {
+						String::new()
+					}
+				} else {
+					String::new()
+				};
+
 				buf.handle_mouse_click(
 					x, y, shift_held,
 					&metrics.layout,
 					pango_ctx,
 					&metrics.layout.text_metrics.font_desc
 				);
-                
-                // Print cursor position after placement with before/after comparison
-                println!("[MOUSE DEBUG] Caret moved from ({},{}) to ({},{})", 
-                         old_row, old_col, buf.cursor.row, buf.cursor.col);
-                println!("[MOUSE DEBUG] Expected line: {}, Actual line: {}", 
-                         global_line_index, buf.cursor.row);
-                
+
+				// Print cursor position after placement with before/after comparison
+				println!("[MOUSE DEBUG] Caret moved from ({},{}) to ({},{})", 
+						 row, col, buf.cursor.row, buf.cursor.col);
+
+				// Call debug_mouse_click for detailed debug output
+				crate::render::pointer::debug_mouse_click(
+					x, y, row, col, &clicked_word, &metrics.layout.line_metrics
+				);
+
 				buf.request_redraw();
 			} else {
 				println!("[ERROR] Mouse event: metrics or pango context cache missing. Mouse event ignored.");

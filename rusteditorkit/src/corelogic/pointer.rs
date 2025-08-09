@@ -235,7 +235,6 @@ pub fn handle_mouse_click(
     }
     
     // Ensure cursor remains visible after any position change
-    buffer.ensure_cursor_visible();
     buffer.mouse_state = if shift_held {
         MouseState::ExtendingSelection
     } else {
