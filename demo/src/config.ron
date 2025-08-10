@@ -85,15 +85,6 @@
         selection_opacity: 0.3,
         selection_text_color: "#ffffff",
     ),
-    scroll: (
-        horizontal_scroll_enabled: true,            // enable horizontal scrolling
-        vertical_scroll_enabled: true,              // enable vertical scrolling
-        horizontal_scroll_policy: Always,           // Options: Always, Automatic, Never
-        vertical_scroll_policy: Always,             // Options: Always, Automatic, Never
-        scroll_sensitivity: 1.0,                    // scroll sensitivity multiplier
-        smooth_scrolling: true,                     // enable smooth scrolling animations
-        scroll_step_size: 3.0,                      // scroll step size for discrete scrolling
-    ),
     search_match_color: "#ffff99",
     whitespace_guide_color: "#ff0000ff",    //not implementet
     show_whitespace_guides: true,          //not implementet

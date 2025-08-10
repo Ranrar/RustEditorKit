@@ -13,9 +13,7 @@ pub mod focus;
 pub mod config;
 pub mod signals;
 pub mod pointer;
-pub mod scrollable;
 
 // Re-export the main EditorWidget for convenience
 pub use editor::EditorWidget;
-pub use scrollable::ScrollableWidget;
 mod size_mode;

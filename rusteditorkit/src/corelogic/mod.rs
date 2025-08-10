@@ -16,7 +16,6 @@ pub mod selection;
 pub mod layout;
 pub mod dispatcher;
 pub mod pointer;
-pub mod scroll;
 
 // Re-export the main types for convenience
 pub use buffer::{EditorBuffer, EditorCursor};
@@ -29,4 +28,3 @@ pub use fileio::*;
 pub use dispatcher::*;
 pub mod widget_sizing;
 pub use widget_sizing::{ConfigurableSize, SizeMode, ContainerMode};
-pub use scroll::{ScrollState, ScrollConfig, ScrollPolicy};

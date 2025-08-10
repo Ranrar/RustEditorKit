@@ -3,12 +3,11 @@ use crate::keybinds::{EditorAction, KeyCombo};
 // This widget properly delegates rendering to the src/render/ modules
 
 use gtk4::prelude::*;
-use gtk4::{DrawingArea, EventControllerScroll, EventControllerScrollFlags};
-use glib::{ControlFlow, Propagation};
+use gtk4::{DrawingArea,};
+use glib::{ControlFlow,};
 use std::cell::RefCell;
 use std::rc::Rc;
 use crate::corelogic::EditorBuffer;
-use crate::corelogic::scroll::ScrollState;
 use crate::imcontext::EditorIMContext;
 use crate::render::layout::LayoutMetrics;
 
@@ -25,8 +24,6 @@ pub struct EditorWidget {
     pub cached_pango_ctx: RefCell<Option<gtk4::pango::Context>>,
     /// Debug info for mouse position visualization
     pub mouse_debug_info: RefCell<crate::render::pointer::MouseDebugInfo>,
-    /// Scroll state for internal content scrolling
-    pub scroll_state: RefCell<ScrollState>,
 }
 
 /// Struct to cache layout metrics and font description
@@ -132,11 +129,9 @@ impl EditorWidget {
             cached_metrics: RefCell::new(None),
             cached_pango_ctx: RefCell::new(None),
             mouse_debug_info: RefCell::new(crate::render::pointer::MouseDebugInfo::default()),
-            scroll_state: RefCell::new(ScrollState::default()),
         };
         widget.update_cursor_config();
         widget.initialize_cache();
-        widget.setup_scroll_handling();
         widget
     }
 
@@ -182,19 +177,8 @@ impl EditorWidget {
         let buffer = self.buffer.clone();
         let cached_metrics = self.cached_metrics.clone();
         let cached_pango_ctx = self.cached_pango_ctx.clone();
-        let scroll_state = self.scroll_state.clone();
         
         self.drawing_area.set_draw_func(move |_area, ctx, width, height| {
-            // Apply scroll offsets to the Cairo context
-            let scroll = scroll_state.borrow();
-            let (scroll_x, scroll_y) = scroll.get_scroll_offset();
-            
-            // Update scroll state viewport size
-            drop(scroll);
-            scroll_state.borrow_mut().set_viewport_size(width as f64, height as f64);
-            
-            // Apply scroll translation to Cairo context
-            ctx.translate(-scroll_x, -scroll_y);
             
             let buf = buffer.borrow();
             let mut layout = LayoutMetrics::calculate(&buf, ctx);
@@ -206,7 +190,6 @@ impl EditorWidget {
                 .unwrap_or(0);
             let content_width = layout.text_left_offset + (max_line_length as f64 * layout.text_metrics.average_char_width);
             let content_height = buf.lines.len() as f64 * layout.line_height;
-            scroll_state.borrow_mut().set_content_size(content_width, content_height);
             
             crate::render::background::render_background_layer(&buf, ctx, width, height);
             // Text layer must be rendered before other layers as it calculates the line metrics
@@ -226,14 +209,7 @@ impl EditorWidget {
             pango_layout.set_text(&line_text);
             // Use unified y-offsets from corelogic/layout.rs
             let mut y_offsets = buf.line_y_offsets(layout.line_height, buf.config.font.font_paragraph_spacing(), layout.top_offset);
-            // Anchor scroll to cumulative offsets
-            let scroll_line = buf.scroll_offset.min(y_offsets.len());
-            let scroll_anchor = if scroll_line < y_offsets.len() {
-                y_offsets[scroll_line] - layout.top_offset
-            } else {
-                y_offsets.last().copied().unwrap_or(layout.top_offset) - layout.top_offset
-            };
-            for y in &mut y_offsets { *y -= scroll_anchor; }
+
             let y_line = y_offsets.get(row).copied().unwrap_or(layout.top_offset);
             // Apply same tab stops for the cursor's layout
             let tabs = layout.build_tab_array(&buf.config);
@@ -254,118 +230,4 @@ impl EditorWidget {
         });
     }
 
-    fn setup_scroll_handling(&self) {
-        let scroll_controller = EventControllerScroll::new(EventControllerScrollFlags::BOTH_AXES);
-        let scroll_state = self.scroll_state.clone();
-        let buffer = self.buffer.clone();
-        let drawing_area = self.drawing_area.clone();
-        
-        scroll_controller.connect_scroll(move |_, dx, dy| {
-            let mut state = scroll_state.borrow_mut();
-            let buf = buffer.borrow();
-            
-            // Get scroll configuration from buffer config
-            let scroll_config = &buf.config.scroll;
-            
-            // Apply scroll delta using the configured step size
-            let step_x = dx * scroll_config.scroll_step_size;
-            let step_y = dy * scroll_config.scroll_step_size;
-            
-            state.scroll_by(step_x, step_y, scroll_config);
-            
-            // Trigger redraw
-            drawing_area.queue_draw();
-            
-            Propagation::Stop
-        });
-        
-        self.drawing_area.add_controller(scroll_controller);
-    }
-}
-
-impl super::scrollable::ScrollableWidget for EditorWidget {
-    fn set_horizontal_scroll_offset(&self, offset: f64) {
-        self.scroll_state.borrow_mut().set_horizontal_offset(offset);
-        self.drawing_area.queue_draw();
-    }
-    
-    fn set_vertical_scroll_offset(&self, offset: f64) {
-        self.scroll_state.borrow_mut().set_vertical_offset(offset);
-        self.drawing_area.queue_draw();
-    }
-    
-    fn set_scroll_offset(&self, horizontal: f64, vertical: f64) {
-        self.scroll_state.borrow_mut().set_scroll_offset(horizontal, vertical);
-        self.drawing_area.queue_draw();
-    }
-    
-    fn get_horizontal_scroll_offset(&self) -> f64 {
-        self.scroll_state.borrow().horizontal_offset
-    }
-    
-    fn get_vertical_scroll_offset(&self) -> f64 {
-        self.scroll_state.borrow().vertical_offset
-    }
-    
-    fn get_scroll_offset(&self) -> (f64, f64) {
-        self.scroll_state.borrow().get_scroll_offset()
-    }
-    
-    fn get_max_horizontal_scroll(&self) -> f64 {
-        self.scroll_state.borrow().max_horizontal
-    }
-    
-    fn get_max_vertical_scroll(&self) -> f64 {
-        self.scroll_state.borrow().max_vertical
-    }
-    
-    fn get_max_scroll(&self) -> (f64, f64) {
-        let state = self.scroll_state.borrow();
-        (state.max_horizontal, state.max_vertical)
-    }
-    
-    fn scroll_by(&self, horizontal_delta: f64, vertical_delta: f64) {
-        let buf = self.buffer.borrow();
-        let scroll_config = &buf.config.scroll;
-        self.scroll_state.borrow_mut().scroll_by(horizontal_delta, vertical_delta, scroll_config);
-        self.drawing_area.queue_draw();
-    }
-    
-    fn needs_horizontal_scroll(&self) -> bool {
-        self.scroll_state.borrow().needs_horizontal_scroll()
-    }
-    
-    fn needs_vertical_scroll(&self) -> bool {
-        self.scroll_state.borrow().needs_vertical_scroll()
-    }
-    
-    fn show_horizontal_scrollbar(&self, policy: crate::corelogic::scroll::ScrollPolicy) -> bool {
-        self.scroll_state.borrow().show_horizontal_scrollbar(policy)
-    }
-    
-    fn show_vertical_scrollbar(&self, policy: crate::corelogic::scroll::ScrollPolicy) -> bool {
-        self.scroll_state.borrow().show_vertical_scrollbar(policy)
-    }
-    
-    fn update_viewport_size(&self, width: f64, height: f64) {
-        self.scroll_state.borrow_mut().set_viewport_size(width, height);
-    }
-    
-    fn update_content_size(&self, width: f64, height: f64) {
-        self.scroll_state.borrow_mut().set_content_size(width, height);
-    }
-    
-    fn reset_scroll(&self) {
-        self.scroll_state.borrow_mut().set_scroll_offset(0.0, 0.0);
-        self.drawing_area.queue_draw();
-    }
-    
-    fn scroll_to_position(&self, x: f64, y: f64) {
-        self.scroll_state.borrow_mut().set_scroll_offset(x, y);
-        self.drawing_area.queue_draw();
-    }
-    
-    fn get_scroll_config(&self) -> crate::corelogic::scroll::ScrollConfig {
-        self.buffer.borrow().config.scroll.clone()
-    }
 }

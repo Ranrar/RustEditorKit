@@ -43,18 +43,6 @@ pub fn render_text_layer(rkit: &EditorBuffer, ctx: &Context, layout: &mut Layout
         current_y += actual_height + paragraph_spacing;
     }
     
-    // Anchor scroll to the current scroll line
-    let scroll_line = rkit.scroll_offset.min(layout.line_metrics.len().saturating_sub(1));
-    let scroll_anchor = if !layout.line_metrics.is_empty() {
-        layout.line_metrics[scroll_line].y_top - layout.top_offset
-    } else {
-        0.0
-    };
-    
-    // Apply scroll offset to all lines
-    for line_metric in &mut layout.line_metrics {
-        line_metric.y_top -= scroll_anchor;
-    }
     // Precompute tabs for consistent tab stop alignment
     let tabs = layout.build_tab_array(&rkit.config);
     for (i, line) in rkit.lines.iter().enumerate() {

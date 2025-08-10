@@ -1,7 +1,6 @@
 use serde::Deserialize;
 use crate::corelogic::gutter::GutterConfig;
 use crate::corelogic::font::FontConfig;
-use crate::corelogic::scroll::ScrollConfig;
 
 /// Configuration for text selection appearance
 #[derive(Debug, Deserialize, Clone)]
@@ -35,7 +34,6 @@ pub struct EditorConfig {
     pub editor_bg_color: String,
     pub gutter: GutterConfig,
     pub selection: SelectionConfig,
-    pub scroll: ScrollConfig,
     /// Number of spaces that a tab represents (used to compute tab stops)
     pub tab_width_spaces: u32,
 
@@ -101,7 +99,6 @@ impl Default for EditorConfig {
                 },
             },
             selection: SelectionConfig::default(),
-            scroll: ScrollConfig::default(),
             tab_width_spaces: 4,
 
             // Search and whitespace guides
@@ -166,8 +163,4 @@ impl EditorConfig {
     pub fn set_selection_text_color(&mut self, color: &str) { self.selection.selection_text_color = color.to_string(); }
     pub fn selection_text_color(&self) -> &str { &self.selection.selection_text_color }
     
-    // Scroll configuration methods
-    pub fn set_scroll(&mut self, scroll: ScrollConfig) { self.scroll = scroll; }
-    pub fn scroll(&self) -> &ScrollConfig { &self.scroll }
-    pub fn scroll_mut(&mut self) -> &mut ScrollConfig { &mut self.scroll }
 }

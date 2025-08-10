@@ -7,10 +7,10 @@
 //! - Fixed, minimum, dynamic, maximum, min/max, aspect ratio, auto-fit, percent-of-parent, container-aware
 //!
 //! # Example Usage
-//! ```rust
-//! use rusteditorkit::widget::ConfigurableSize;
-//! use rusteditorkit::corelogic::SizeMode;
-//! let drawing_area = gtk::DrawingArea::new();
+//! ```rust,no_run
+//! use rusteditorkit::corelogic::{ConfigurableSize, SizeMode};
+//! use gtk4::DrawingArea;
+//! let drawing_area = DrawingArea::new();
 //! drawing_area.configure_size(SizeMode::Minimum(400, 300));
 //! drawing_area.switch_mode(SizeMode::AspectRatio(16.0/9.0));
 //! ```

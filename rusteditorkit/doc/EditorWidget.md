@@ -247,29 +247,7 @@ fn create_status_bar(editor: &EditorWidget) -> Box {
 }
 ```
 
-### Multiple Editor Tabs
 
-```rust
-use gtk4::{Notebook, ScrolledWindow};
-
-fn create_tabbed_editor() -> Notebook {
-    let notebook = Notebook::new();
-    
-    // Add first tab
-    let editor1 = EditorWidget::new();
-    editor1.connect_signals();
-    
-    let scroll1 = ScrolledWindow::builder()
-        .child(editor1.widget())
-        .build();
-        
-    notebook.append_page(&scroll1, Some(&Label::new(Some("Document 1"))));
-    
-    // Add more tabs as needed...
-    
-    notebook
-}
-```
 
 ## Theming and Customization
 

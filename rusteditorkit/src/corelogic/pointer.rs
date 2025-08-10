@@ -107,9 +107,6 @@ pub fn screen_to_buffer_position(
                 
                 println!("[POINTER DEBUG] Click below visible area. Estimated line: {}", target_line);
                 
-                // We can't directly update buffer.scroll_offset here since buffer is an immutable reference
-                // We'll return the line index and let the caller handle scrolling
-                
                 row = target_line;
                 found = true;
             }
@@ -205,22 +202,7 @@ pub fn handle_mouse_click(
     font_desc: &FontDescription,
 ) {
     let (row, col) = screen_to_buffer_position(buffer, x, y, layout, pango_ctx, font_desc);
-    
-    // Handle auto-scrolling when clicking beyond visible area
-    let last_visible_line = if !layout.line_metrics.is_empty() {
-        layout.line_metrics.len() - 1
-    } else {
-        0
-    };
-    
-    // If the click resulted in a row beyond the last visible line, adjust scroll offset
-    if row > last_visible_line && row < buffer.lines.len() {
-        let lines_to_scroll = row - last_visible_line;
-        buffer.scroll_offset = buffer.scroll_offset.saturating_add(lines_to_scroll);
-        buffer.scroll_offset = buffer.scroll_offset.min(buffer.lines.len().saturating_sub(1));
-        println!("[SCROLL DEBUG] Auto-scrolled {} lines down to show clicked line", lines_to_scroll);
-    }
-    
+       
     // Process the click as before
     if shift_held && buffer.selection.is_some() {
         if let Some(sel) = &mut buffer.selection {

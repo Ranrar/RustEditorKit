@@ -20,39 +20,6 @@ impl EditorWidget {
 		});
 		self.drawing_area.add_controller(mouse_motion);
         
-        // Add scroll wheel controller
-        let scroll_controller = gtk4::EventControllerScroll::new(gtk4::EventControllerScrollFlags::VERTICAL);
-        let buffer_scroll = self.buffer().clone();
-        scroll_controller.connect_scroll(move |_, _dx, dy| {
-            let mut buf = buffer_scroll.borrow_mut();
-            
-            // Calculate scroll direction and amount
-            let scroll_dir = if dy > 0.0 { 1 } else { -1 };
-            let scroll_amount = (dy.abs().ceil() as usize).max(1);
-            
-            // Update scroll offset
-            if scroll_dir > 0 {
-                // Scroll down: increase offset
-                buf.scroll_offset = buf.scroll_offset.saturating_add(scroll_amount);
-            } else {
-                // Scroll up: decrease offset
-                buf.scroll_offset = buf.scroll_offset.saturating_sub(scroll_amount);
-            }
-            
-            // Limit scroll offset to valid range
-            buf.scroll_offset = buf.scroll_offset.min(buf.lines.len().saturating_sub(1));
-            
-            println!("[SCROLL DEBUG] Scrolled {} lines, new offset: {}", 
-                   if scroll_dir > 0 { format!("+{}", scroll_amount) } else { format!("-{}", scroll_amount) }, 
-                   buf.scroll_offset);
-            
-            // Request redraw with updated scroll position
-            buf.request_redraw();
-            
-            // Returning false allows the event to propagate
-            gtk4::glib::Propagation::Proceed
-        });
-        self.drawing_area.add_controller(scroll_controller);
 		// Primary mouse button controller (for clicking and dragging)
 		let buffer_primary = self.buffer().clone();
 		let cached_metrics = self.cached_metrics.clone();

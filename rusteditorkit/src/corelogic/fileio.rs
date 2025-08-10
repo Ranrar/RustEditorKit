@@ -23,7 +23,6 @@ impl EditorBuffer {
                 self.lines = lines;
                 self.cursor.row = 0;
                 self.cursor.col = 0;
-                self.scroll_offset = 0;
                 self.selection = None;
                 self.undo_stack.clear();
                 self.redo_stack.clear();
@@ -62,7 +61,6 @@ impl EditorBuffer {
         self.lines = vec![String::new()];
         self.cursor.row = 0;
         self.cursor.col = 0;
-        self.scroll_offset = 0;
         self.selection = None;
         self.undo_stack.clear();
         self.redo_stack.clear();

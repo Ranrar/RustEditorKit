@@ -31,8 +31,6 @@ pub struct EditorBuffer {
     pub lines: Vec<String>,
     /// Cursor position
     pub cursor: EditorCursor,
-    /// Scroll offset for vertical scrolling
-    pub scroll_offset: usize,
     /// Whether to highlight the current line
     /// Selection (start/end)
     pub selection: Option<crate::corelogic::selection::Selection>,
@@ -197,7 +195,6 @@ impl EditorBuffer {
                 "- Configurable themes".to_string(),
             ],
             cursor: EditorCursor::new(0, 0),
-            scroll_offset: 0,
             selection: None,
             multi_cursors: Vec::new(),
             multi_selections: Vec::new(),
