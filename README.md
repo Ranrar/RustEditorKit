@@ -65,7 +65,12 @@ window.set_child(Some(editor.widget()));
 
 **Project Status:** Alpha - Most core features working, API may change
 
-**Known Issues in Current Build**
-- Mouse selection are not visually working as expected.
-- Arrow key navigation has issues with multi-byte UTF-8 sequences.
-- Scrollbar is not working (it hasn’t been implemented yet).
+
+## Known Issues in Current Build
+
+**Known Issues:**
+- Arrow key navigation and selection does not work correctly with multibyte UTF-8.
+- Line height is variable due to the current calculation of line_height.
+- Mouse selection is not displayed correctly.
+- Some keyboard shortcuts may not work.
+- Scroll bar is not implemented.
