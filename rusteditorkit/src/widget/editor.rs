@@ -22,8 +22,6 @@ pub struct EditorWidget {
     pub cached_metrics: RefCell<Option<CachedEditorMetrics>>,
     /// Cached Pango context for event handlers
     pub cached_pango_ctx: RefCell<Option<gtk4::pango::Context>>,
-    /// Debug info for mouse position visualization
-    pub mouse_debug_info: RefCell<crate::render::pointer::MouseDebugInfo>,
 }
 
 /// Struct to cache layout metrics and font description
@@ -128,7 +126,6 @@ impl EditorWidget {
             keymap,
             cached_metrics: RefCell::new(None),
             cached_pango_ctx: RefCell::new(None),
-            mouse_debug_info: RefCell::new(crate::render::pointer::MouseDebugInfo::default()),
         };
         widget.update_cursor_config();
         widget.initialize_cache();

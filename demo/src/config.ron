@@ -1,7 +1,7 @@
 (
     font: (
         font_name: "Fira Mono",             //working
-        font_size: 11.0,                    //working
+        font_size: 14.0,                    //working
         font_color: "#222222",            //working
         font_paragraph_spacing: 0.0,        //working
         font_character_spacing: 0.0,        //not implementet
@@ -93,6 +93,6 @@
     comment_enabled: true,                  //not implementet
     margin_left: 8.0,        //working
     margin_right: 0.0,      //not working
-    margin_top: -16.0,       //working
+    margin_top: 0.0,       //working
     margin_bottom: 0.0,   //not working
 )

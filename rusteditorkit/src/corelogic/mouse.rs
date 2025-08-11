@@ -17,6 +17,7 @@ impl Default for MouseState {
 use crate::corelogic::buffer::EditorBuffer;
 use gtk4::pango::{Context, FontDescription};
 use crate::render::layout::LayoutMetrics;
+use crate::corelogic::line_height::unified_line_height;
 
 pub fn screen_to_buffer_position(
     buffer: &EditorBuffer,
@@ -26,126 +27,27 @@ pub fn screen_to_buffer_position(
     pango_ctx: &Context,
     font_desc: &FontDescription,
 ) -> (usize, usize) {
+    println!("[DEBUG] Mouse click at x={}, y={}", x, y);
+    println!("[DEBUG] Layout top_offset: {}", layout.top_offset);
+    for (i, lm) in layout.line_metrics.iter().enumerate() {
+        println!("[DEBUG] Line {}: y_top={}, height={}", i, lm.y_top, lm.height);
+    }
     let left_margin = layout.text_left_offset;
-    
-    // Use line_metrics for variable-height lines
-    // Find row by comparing against inclusive bands [y_top, y_top + height) for each line
-    let mut row = 0;
-    let mut found = false;
-    
-    println!("[POINTER DEBUG] Mouse position: ({:.1}, {:.1})", x, y);
-    
-    // If we have any line metrics available, use them for accurate hit-testing
-    if !layout.line_metrics.is_empty() {
-        let max_lines = layout.line_metrics.len().min(buffer.lines.len());
-        
-        for i in 0..max_lines {
-            let line_metric = &layout.line_metrics[i];
-            let band_top = line_metric.y_top;
-            
-            // Calculate the band's bottom position
-            // If this is the last line, use the line height
-            // Otherwise, use the next line's y_top as the boundary
-            let band_bottom = if i + 1 < max_lines {
-                layout.line_metrics[i+1].y_top
-            } else {
-                band_top + line_metric.height + buffer.config.font.font_paragraph_spacing()
-            };
-            
-            println!("[POINTER DEBUG] Line {}: y=[{:.1}-{:.1}], height={:.1}", 
-                     i, band_top, band_bottom, line_metric.height);
-            
-            // Check if y is within this band
-            if y >= band_top && y < band_bottom {
-                row = i;
-                found = true;
-                println!("[POINTER DEBUG] Found match at row {}", i);
-                break;
-            }
-        }
-        
-        // If we still haven't found a match but have valid line metrics
-        if !found && !layout.line_metrics.is_empty() {
-            // If we're above the first line, use first line
-            if y < layout.line_metrics[0].y_top {
-                row = 0;
-                found = true;
-                println!("[POINTER DEBUG] Above first line, using row 0");
-            }
-            // If we're below the last line, use last line
-            else if y >= layout.line_metrics.last().unwrap().y_top + layout.line_metrics.last().unwrap().height {
-                row = (layout.line_metrics.len() - 1).min(buffer.lines.len() - 1);
-                found = true;
-                println!("[POINTER DEBUG] Below last line, using row {}", row);
-            }
-        }
+    println!("[DEBUG] Mouse click at x={}, y={}", x, y);
+    println!("[DEBUG] Layout top_offset: {}", layout.top_offset);
+    for (i, lm) in layout.line_metrics.iter().enumerate() {
+        println!("[DEBUG] Line {}: y_top={}, height={}", i, lm.y_top, lm.height);
     }
     
-    if !found {
-        // Check if click is below the last visible line
-        if !layout.line_metrics.is_empty() {
-            let max_lines = layout.line_metrics.len().min(buffer.lines.len());
-            
-            // If we have metrics and the click is below the last visible line
-            if max_lines > 0 && y > layout.line_metrics[max_lines - 1].y_top + layout.line_metrics[max_lines - 1].height {
-                // Calculate which line this should be based on global coordinates
-                let last_visible_line = max_lines - 1;
-                let last_bottom = layout.line_metrics[last_visible_line].y_top + layout.line_metrics[last_visible_line].height;
-                let distance_below_last = y - last_bottom;
-                
-                // Use the average line height of visible lines to estimate which line was clicked
-                let mut avg_line_height = layout.line_height;
-                if max_lines > 1 {
-                    let total_height = layout.line_metrics[max_lines - 1].y_top + layout.line_metrics[max_lines - 1].height - 
-                                      layout.line_metrics[0].y_top;
-                    avg_line_height = total_height / max_lines as f64;
-                }
-                
-                // Estimate which line beyond the visible area was clicked
-                let estimated_lines_below = (distance_below_last / avg_line_height).floor() as usize;
-                let target_line = (last_visible_line + 1 + estimated_lines_below).min(buffer.lines.len() - 1);
-                
-                println!("[POINTER DEBUG] Click below visible area. Estimated line: {}", target_line);
-                
-                row = target_line;
-                found = true;
-            }
-        }
-        
-        // If still not found, choose nearest visible row center as before
-        if !found {
-            let mut nearest_row = 0;
-            let mut min_dist = f64::MAX;
-            
-            if !layout.line_metrics.is_empty() {
-                // Use the available line metrics, but don't go beyond buffer.lines.len()
-                let max_lines = layout.line_metrics.len().min(buffer.lines.len());
-                for i in 0..max_lines {
-                    let line_metric = &layout.line_metrics[i];
-                    let center = line_metric.y_top + (line_metric.height / 2.0);
-                    let dist = (y - center).abs();
-                    if dist < min_dist {
-                        min_dist = dist;
-                        nearest_row = i;
-                    }
-                }
-            } else {
-                // Fallback to constant line height if line_metrics isn't valid
-                let line_height = layout.line_height;
-                for i in 0..buffer.lines.len() {
-                    let top = layout.top_offset + (i as f64 * line_height);
-                    let center = top + (line_height / 2.0);
-                    let dist = (y - center).abs();
-                    if dist < min_dist {
-                        min_dist = dist;
-                        nearest_row = i;
-                    }
-                }
-            }
-            row = nearest_row;
-            println!("[POINTER DEBUG] Using nearest row {}", row);
-        }
-    }
+    // Use unified line height for row calculation
+    let text_height = layout.text_metrics.height;
+    let gutter_height = layout.gutter_metrics.height;
+    let paragraph_spacing = buffer.config.font.font_paragraph_spacing();
+    // Fallback: use text_height as glyph_height if not available
+    let line_height = unified_line_height(text_height, gutter_height, text_height, paragraph_spacing);
+    let row_calc = ((y - layout.top_offset) / line_height).floor() as isize;
+    let row = row_calc.clamp(0, (buffer.lines.len() - 1) as isize) as usize;
+    println!("[DEBUG] Direct row calculation: y={}, top_offset={}, line_height={}, row_calc={}, clamped_row={}", y, layout.top_offset, line_height, row_calc, row);
     let line = if row < buffer.lines.len() { &buffer.lines[row] } else { "" };
     let pango_layout = gtk4::pango::Layout::new(pango_ctx);
     pango_layout.set_text(line);
@@ -186,6 +88,10 @@ pub fn screen_to_buffer_position(
     if trailing > 0 {
         col = (col + 1).min(line.chars().count());
     }
+    if row >= layout.line_metrics.len() {
+        println!("[DEBUG] No line metrics for row {}, using Pango layout for column mapping at x={}, mapped col={}", row, x, col);
+    }
+    println!("[DEBUG] Mapped to row={}, col={}, line='{}'", row, col, line);
     // Clamp row and col to valid buffer bounds
     let row = row.min(buffer.lines.len().saturating_sub(1));
     let col = col.min(line.chars().count());
@@ -202,6 +108,7 @@ pub fn handle_mouse_click(
     font_desc: &FontDescription,
 ) {
     let (row, col) = screen_to_buffer_position(buffer, x, y, layout, pango_ctx, font_desc);
+    println!("[DEBUG] handle_mouse_click: x={}, y={}, mapped row={}, col={}", x, y, row, col);
        
     // Process the click as before
     if shift_held && buffer.selection.is_some() {

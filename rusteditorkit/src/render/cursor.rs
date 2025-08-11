@@ -24,7 +24,17 @@ pub fn render_cursor_layer(
     // Unicode fallback: Pango handles multi-byte, so just document
     let cursor_rect = text_layout.index_to_pos(col as i32);
     let cursor_x = layout.text_left_offset + (cursor_rect.x() as f64) / (pango::SCALE as f64);
-    let y_baseline = y_line + layout.text_metrics.baseline_offset;
+    // Estimate y position for lines beyond last visible line
+    let mut y_baseline = y_line + layout.text_metrics.baseline_offset;
+    if rkit.cursor.row >= layout.line_metrics.len() {
+        // Use average line height to estimate y position
+        let avg_line_height = layout.line_height;
+        let last_metric = layout.line_metrics.last();
+        let last_y = last_metric.map(|m| m.y_top + m.height).unwrap_or(layout.top_offset);
+        let lines_below = rkit.cursor.row.saturating_sub(layout.line_metrics.len().saturating_sub(1));
+        y_baseline = last_y + (lines_below as f64 * avg_line_height) + layout.text_metrics.baseline_offset;
+        println!("[CURSOR DEBUG] Cursor row {} is beyond last visible line, estimated y_baseline = {}", rkit.cursor.row, y_baseline);
+    }
     let cursor_y = y_baseline + cursor_cfg.cursor_padding_y;
     let text_height = layout.text_metrics.height;
     // let line_height = layout.line_height;

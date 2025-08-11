@@ -85,15 +85,7 @@ pub fn render_text_layer(rkit: &EditorBuffer, ctx: &Context, layout: &mut Layout
         let _ = ctx.show_text(&format!("L{}", i));
         let _ = ctx.stroke();
     }
-    
-    // Draw visual marker at last mouse position
-    let mouse_debug_info = crate::render::pointer::MouseDebugInfo {
-        x: rkit.last_mouse_x,
-        y: rkit.last_mouse_y,
-        is_valid: true,
-    };
-    crate::render::pointer::render_mouse_marker(ctx, &mouse_debug_info);
-    
+        
     // Draw cursor at correct y_offset for the current line
     let cursor_row = rkit.cursor.row;
     if cursor_row < layout.line_metrics.len() {

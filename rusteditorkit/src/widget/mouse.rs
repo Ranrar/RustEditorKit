@@ -35,56 +35,21 @@ impl EditorWidget {
 			let state = gesture.current_event_state();
 			let shift_held = state.contains(gtk4::gdk::ModifierType::SHIFT_MASK);
 
-			println!("[MOUSE DEBUG] Click at ({:.1}, {:.1}), shift: {}", x, y, shift_held);
 
 			let mut buf = buffer_click.borrow_mut();
 			let metrics_opt = cached_metrics_click.borrow();
 			let pango_ctx_opt = cached_pango_ctx_click.borrow();
 			if let (Some(metrics), Some(pango_ctx)) = (metrics_opt.as_ref(), pango_ctx_opt.as_ref()) {
-				// Calculate buffer position (row, col) from mouse click
-				let (row, col) = crate::corelogic::pointer::screen_to_buffer_position(
-					&buf, x, y, &metrics.layout, pango_ctx, &metrics.layout.text_metrics.font_desc
-				);
-				// Extract clicked word
-				let clicked_word = if row < buf.lines.len() {
-					let line = &buf.lines[row];
-					let chars: Vec<char> = line.chars().collect();
-					if col < chars.len() && chars[col].is_alphanumeric() {
-						let mut start = col;
-						let mut end = col;
-						while start > 0 && (chars[start - 1].is_alphanumeric() || chars[start - 1] == '_') {
-							start -= 1;
-						}
-						while end < chars.len() && (chars[end].is_alphanumeric() || chars[end] == '_') {
-							end += 1;
-						}
-						line[start..end].to_string()
-					} else {
-						String::new()
-					}
-				} else {
-					String::new()
-				};
-
+				
 				buf.handle_mouse_click(
 					x, y, shift_held,
 					&metrics.layout,
 					pango_ctx,
 					&metrics.layout.text_metrics.font_desc
 				);
-
-				// Print cursor position after placement with before/after comparison
-				println!("[MOUSE DEBUG] Caret moved from ({},{}) to ({},{})", 
-						 row, col, buf.cursor.row, buf.cursor.col);
-
-				// Call debug_mouse_click for detailed debug output
-				crate::render::pointer::debug_mouse_click(
-					x, y, row, col, &clicked_word, &metrics.layout.line_metrics
-				);
-
+				
 				buf.request_redraw();
 			} else {
-				println!("[ERROR] Mouse event: metrics or pango context cache missing. Mouse event ignored.");
 			}
 		});
 
@@ -101,7 +66,6 @@ impl EditorWidget {
 				// Robust click count handling: always expand selection as expected
 				match n_press {
 					2 => {
-						println!("[MOUSE DEBUG] Double-click at ({:.1}, {:.1})", x, y);
 						buf.handle_double_click(
 							x, y,
 							&metrics.layout,
@@ -111,7 +75,6 @@ impl EditorWidget {
 						buf.request_redraw();
 					},
 					3 => {
-						println!("[MOUSE DEBUG] Triple-click at ({:.1}, {:.1})", x, y);
 						buf.handle_triple_click(
 							x, y,
 							&metrics.layout,
@@ -133,7 +96,6 @@ impl EditorWidget {
 					}
 				}
 			} else {
-				println!("[ERROR] Mouse event: metrics or pango context cache missing. Mouse event ignored.");
 			}
 		});
 
@@ -153,7 +115,6 @@ impl EditorWidget {
 					let current_x = _start_x + dx;
 					let current_y = _start_y + dy;
 
-					println!("[MOUSE DEBUG] Drag to ({:.1}, {:.1})", current_x, current_y);
 
 					let mut buf = buffer_drag_update.borrow_mut();
 					let metrics_opt = cached_metrics_drag.borrow();
@@ -167,7 +128,6 @@ impl EditorWidget {
 						);
 						buf.request_redraw();
 					} else {
-						println!("[ERROR] Mouse drag: metrics or pango context cache missing. Mouse drag ignored.");
 					}
 				}
 			}
@@ -175,7 +135,6 @@ impl EditorWidget {
 
 		let buffer_drag_end = buffer_drag.clone();
 		drag_controller.connect_drag_end(move |_, _x, _y| {
-			println!("[MOUSE DEBUG] Drag ended");
 			let mut buf = buffer_drag_end.borrow_mut();
 			buf.handle_mouse_release();
 		});

@@ -2,6 +2,7 @@
 use gtk4::cairo::Context;
 use gtk4::pango;
 use crate::corelogic::EditorBuffer;
+// unified_line_height is only used in per-line calculation below
 
 /// Stores metrics for a specific line including its position and height
 #[derive(Debug, Clone)]
@@ -64,8 +65,15 @@ impl LayoutMetrics {
         let gutter_font_desc = text_font_desc.clone();
         let mut text_metrics = FontMetrics::calculate(ctx, &text_font_desc);
         let mut gutter_metrics = FontMetrics::calculate(ctx, &gutter_font_desc);
-        // Always use the maximum of text or gutter heights for line_height
-        let line_height = text_metrics.height.max(gutter_metrics.height);
+        // Use unified line height calculation for consistency
+        let paragraph_spacing = font_cfg.font_paragraph_spacing();
+        // Use a default glyph_height for initial line_height (for metrics, not per-line)
+        let line_height = crate::corelogic::line_height::unified_line_height(
+            text_metrics.height,
+            gutter_metrics.height,
+            text_metrics.height, // fallback: use text_metrics.height for initial metrics
+            paragraph_spacing,
+        );
         text_metrics.baseline_offset = (line_height - text_metrics.height) / 2.0 + text_metrics.baseline;
         gutter_metrics.baseline_offset = (line_height - gutter_metrics.height) / 2.0 + gutter_metrics.baseline;
         let text_left_offset = if rkit.config.gutter.toggle {
@@ -75,18 +83,26 @@ impl LayoutMetrics {
         };
         let top_offset = rkit.config.margin_top;
         
-        // Initialize line_metrics with default values
-        // These will be updated by the text renderer when measuring actual lines
+        // Initialize line_metrics with per-line tallest glyph measurement
         let mut line_metrics = Vec::with_capacity(rkit.lines.len());
-        let paragraph_spacing = font_cfg.font_paragraph_spacing();
         let mut y = top_offset;
-        
-        for _ in 0..rkit.lines.len() {
+        for line in &rkit.lines {
+            // Measure tallest glyph in this line using Pango
+            let layout = pangocairo::functions::create_layout(ctx);
+            layout.set_font_description(Some(&text_font_desc));
+            layout.set_text(line);
+            let glyph_height = layout.extents().1.height() as f64 / pango::SCALE as f64;
+            let per_line_height = crate::corelogic::line_height::unified_line_height(
+                text_metrics.height,
+                gutter_metrics.height,
+                glyph_height,
+                paragraph_spacing,
+            );
             line_metrics.push(LineMetrics {
                 y_top: y,
-                height: line_height,
+                height: per_line_height,
             });
-            y += line_height + paragraph_spacing;
+            y += per_line_height;
         }
         
         Self {

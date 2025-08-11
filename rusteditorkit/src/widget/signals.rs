@@ -1,5 +1,8 @@
-//! Signal connections for the EditorWidget
-//! Handles connecting various signals and event handlers
+/// Signal connections for the EditorWidget
+/// Handles connecting various signals and event handlers
+
+impl EditorWidget {
+}
 
 use gtk4::prelude::*;
 use gtk4::glib::translate::IntoGlib;

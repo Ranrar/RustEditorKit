@@ -6,7 +6,7 @@
 
 use syntect::parsing::SyntaxSet;
 use syntect::highlighting::ThemeSet;
-use crate::corelogic::pointer::MouseState;
+use crate::corelogic::mouse::MouseState;
 
 /// Represents the position of the cursor in the editor (row, col).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -29,6 +29,8 @@ pub struct EditorBuffer {
     pub config: crate::config::configuration::EditorConfig,
     /// Lines of text in the buffer
     pub lines: Vec<String>,
+    /// Cached layout metrics for rendering and hit-testing
+    pub layout_metrics: Option<crate::render::layout::LayoutMetrics>,
     /// Cursor position
     pub cursor: EditorCursor,
     /// Whether to highlight the current line
@@ -70,6 +72,29 @@ pub struct EditorBuffer {
 }
 
 impl EditorBuffer {
+    /// Recalculate layout metrics after lines are added or deleted
+    pub fn recalculate_layout_metrics(&mut self, ctx: &gtk4::cairo::Context) {
+        self.layout_metrics = Some(crate::render::layout::LayoutMetrics::calculate(self, ctx));
+    }
+    /// Add a line and recalculate layout metrics
+    pub fn push_line(&mut self, line: String, ctx: &gtk4::cairo::Context) {
+        self.lines.push(line);
+        self.recalculate_layout_metrics(ctx);
+    }
+
+    /// Remove a line at index and recalculate layout metrics
+    pub fn remove_line(&mut self, idx: usize, ctx: &gtk4::cairo::Context) {
+        if idx < self.lines.len() {
+            self.lines.remove(idx);
+            self.recalculate_layout_metrics(ctx);
+        }
+    }
+
+    /// Clear all lines and recalculate layout metrics
+    pub fn clear_lines(&mut self, ctx: &gtk4::cairo::Context) {
+        self.lines.clear();
+        self.recalculate_layout_metrics(ctx);
+    }
     /// Dispatches an editor action using the CommandDispatcher
     pub fn handle_editor_action(&mut self, action: crate::keybinds::EditorAction) {
         use crate::corelogic::dispatcher::{CommandParams, CommandDispatcher};
@@ -170,16 +195,20 @@ impl EditorBuffer {
         }
     }
     /// Returns the unified line height for rendering (max of text font size, gutter font size, font_paragraph_spacing)
-    pub fn unified_line_height(&self) -> f64 {
-        let text_size = self.font_size();
-        let gutter_size = self.config.gutter.font_size as f64;
-        let line_height = self.font_paragraph_spacing();
-        text_size.max(gutter_size).max(line_height)
+    /// Returns the unified line height for rendering and hit-testing
+    pub fn unified_line_height(&self, text_height: f64, gutter_height: f64) -> f64 {
+        // Fallback: use text_height as glyph_height if not available
+        crate::corelogic::line_height::unified_line_height(
+            text_height,
+            gutter_height,
+            text_height,
+            self.font_paragraph_spacing(),
+        )
     }
     /// Create a new empty EditorBuffer with default configuration
     pub fn new() -> Self {
         let config = crate::config::configuration::EditorConfig::default();
-        EditorBuffer {
+    EditorBuffer {
             cursor_state: crate::corelogic::cursor::CursorState::new(&config.cursor),
             config,
             lines: vec![
@@ -194,6 +223,7 @@ impl EditorBuffer {
                 "- Line numbers".to_string(),
                 "- Configurable themes".to_string(),
             ],
+            layout_metrics: None,
             cursor: EditorCursor::new(0, 0),
             selection: None,
             multi_cursors: Vec::new(),

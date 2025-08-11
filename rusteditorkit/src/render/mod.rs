@@ -23,7 +23,6 @@ pub mod cache;
 pub mod invalidate;
 pub mod highlight;
 pub mod selection;
-pub mod pointer;
 
 // Publicly re-export main types and entry points
 pub use background::render_background_layer;

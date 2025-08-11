@@ -223,27 +223,27 @@ impl EditorBuffer {
     // ...existing code...
     // Pointer/mouse logic is now delegated to corelogic::pointer
     pub fn screen_to_buffer_position(&self, x: f64, y: f64, layout: &crate::render::layout::LayoutMetrics, pango_ctx: &gtk4::pango::Context, font_desc: &gtk4::pango::FontDescription) -> (usize, usize) {
-        crate::corelogic::pointer::screen_to_buffer_position(self, x, y, layout, pango_ctx, font_desc)
+        crate::corelogic::mouse::screen_to_buffer_position(self, x, y, layout, pango_ctx, font_desc)
     }
 
     pub fn handle_mouse_click(&mut self, x: f64, y: f64, shift_held: bool, layout: &crate::render::layout::LayoutMetrics, pango_ctx: &gtk4::pango::Context, font_desc: &gtk4::pango::FontDescription) {
-        crate::corelogic::pointer::handle_mouse_click(self, x, y, shift_held, layout, pango_ctx, font_desc)
+        crate::corelogic::mouse::handle_mouse_click(self, x, y, shift_held, layout, pango_ctx, font_desc)
     }
 
     pub fn handle_mouse_drag(&mut self, x: f64, y: f64, layout: &crate::render::layout::LayoutMetrics, pango_ctx: &gtk4::pango::Context, font_desc: &gtk4::pango::FontDescription) {
-        crate::corelogic::pointer::handle_mouse_drag(self, x, y, layout, pango_ctx, font_desc)
+        crate::corelogic::mouse::handle_mouse_drag(self, x, y, layout, pango_ctx, font_desc)
     }
 
     pub fn handle_mouse_release(&mut self) {
-        crate::corelogic::pointer::handle_mouse_release(self)
+        crate::corelogic::mouse::handle_mouse_release(self)
     }
 
     pub fn handle_double_click(&mut self, x: f64, y: f64, layout: &crate::render::layout::LayoutMetrics, pango_ctx: &gtk4::pango::Context, font_desc: &gtk4::pango::FontDescription) {
-        crate::corelogic::pointer::handle_double_click(self, x, y, layout, pango_ctx, font_desc)
+        crate::corelogic::mouse::handle_double_click(self, x, y, layout, pango_ctx, font_desc)
     }
 
     pub fn handle_triple_click(&mut self, x: f64, y: f64, layout: &crate::render::layout::LayoutMetrics, pango_ctx: &gtk4::pango::Context, font_desc: &gtk4::pango::FontDescription) {
-        crate::corelogic::pointer::handle_triple_click(self, x, y, layout, pango_ctx, font_desc)
+        crate::corelogic::mouse::handle_triple_click(self, x, y, layout, pango_ctx, font_desc)
     }
 
     /// Get the currently selected text

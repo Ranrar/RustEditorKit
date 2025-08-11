@@ -26,12 +26,12 @@ impl EditorBuffer {
                 self.selection = None;
                 self.undo_stack.clear();
                 self.redo_stack.clear();
-                
                 // Ensure we have at least one line
                 if self.lines.is_empty() {
                     self.lines.push(String::new());
                 }
-                
+                // Request redraw so UI can recalculate layout metrics
+                self.request_redraw();
                 println!("[DEBUG] Opened file: {} ({} lines)", path, self.lines.len());
                 Ok(())
             }
@@ -96,16 +96,15 @@ impl EditorBuffer {
     pub fn import_from_text(&mut self, text: &str) {
         self.push_undo();
         self.lines = text.lines().map(|line| line.to_string()).collect();
-        
         // Ensure we have at least one line
         if self.lines.is_empty() {
             self.lines.push(String::new());
         }
-        
         self.cursor.row = 0;
         self.cursor.col = 0;
         self.selection = None;
-        
+    // Request redraw so UI can recalculate layout metrics
+    self.request_redraw();
         println!("[DEBUG] Imported text ({} lines)", self.lines.len());
     }
 

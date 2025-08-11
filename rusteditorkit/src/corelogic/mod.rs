@@ -1,7 +1,9 @@
-//! Core Logic Module for RustEditorKit
-//! 
-//! This module contains the centralized editor logic organized by functionality.
-//! All EditorBuffer implementations are consolidated here for better maintainability.
+pub mod line_height;
+
+/// Core Logic Module for RustEditorKit
+/// 
+/// This module contains the centralized editor logic organized by functionality.
+/// All EditorBuffer implementations are consolidated here for better maintainability.
 
 pub mod buffer;
 pub mod editing;
@@ -15,7 +17,7 @@ pub mod fileio;
 pub mod selection;
 pub mod layout;
 pub mod dispatcher;
-pub mod pointer;
+pub mod mouse;
 
 // Re-export the main types for convenience
 pub use buffer::{EditorBuffer, EditorCursor};
